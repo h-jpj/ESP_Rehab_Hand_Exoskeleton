@@ -13,13 +13,36 @@ A Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Nativ
 
 | Component | ESP32 Pin |
 |-----------|-----------|
-| Servo 1 Signal | GPIO 18 |
-| Servo 2 Signal | GPIO 19 |
-| Servo 3 Signal | GPIO 21 |
+| Servo 1 Signal | GPIO 21 |
+| Servo 2 Signal | GPIO 22 |
+| Servo 3 Signal | GPIO 23 |
 | All Servo Power | Vin pin |
 | All Servo Ground | GND pin |
 
 ⚠️ **Power Note**: This wiring is suitable for short-term demo purposes only. For production use, consider external power supply for servos.
+
+## 🚀 Quick Start
+
+### Prerequisites
+
+**Software Requirements:**
+- **Node.js** (v16 or later) - [Download here](https://nodejs.org/)
+- **VS Code** with PlatformIO extension - [Get VS Code](https://code.visualstudio.com/)
+- **Android Studio** (for Android development) - [Download here](https://developer.android.com/studio)
+- **Git** - [Install Git](https://git-scm.com/)
+
+**Hardware Requirements:**
+- ESP32 development board
+- 3x servo motors (miuzei ms18 micro 9g or similar)
+- USB cable for programming
+- Jumper wires
+
+### Clone the Repository
+
+```bash
+git clone https://github.com/your-username/ESP32-Rehab-Hand-Exoskeleton.git
+cd ESP32-Rehab-Hand-Exoskeleton
+```
 
 ## Software Setup
 
@@ -31,7 +54,7 @@ A Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Nativ
 
 2. **Build and Upload**:
    ```bash
-   cd ESP_Rehab_Hand_Exoskeleton
+   # From the project root directory
    pio run --target upload
    pio device monitor
    ```
@@ -56,9 +79,11 @@ A Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Nativ
 
 2. **Build and Run**:
    ```bash
-   # Build release APK for Android
+   # Build release APK for Android (Expo will handle everything)
    npx expo run:android --variant release
    ```
+
+   **Note**: First run will take longer as Expo downloads Android SDK components and builds the project.
 
 3. **Connection Process**:
    - If ESP32 was previously paired, forget it in Android Bluetooth settings
