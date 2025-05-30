@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32 Rehabilitation Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🦾</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🦾 ESP32 Rehabilitation Dashboard</h1>
+            <div class="status-indicator" id="connectionStatus">
+                <span class="status-dot offline"></span>
+                <span>Connecting...</span>
+            </div>
+        </header>
+
+        <main>
+            <!-- System Overview -->
+            <section class="dashboard-section">
+                <h2>📊 System Overview</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalSessions">-</div>
+                        <div class="stat-label">Total Sessions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="todaySessions">-</div>
+                        <div class="stat-label">Today's Sessions</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalDuration">-</div>
+                        <div class="stat-label">Total Duration</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="totalCycles">-</div>
+                        <div class="stat-label">Total Cycles</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Device Status -->
+            <section class="dashboard-section">
+                <h2>🔌 Device Status</h2>
+                <div id="deviceStatus" class="device-list">
+                    <div class="loading">Loading device status...</div>
+                </div>
+            </section>
+
+            <!-- Recent Sessions -->
+            <section class="dashboard-section">
+                <h2>📋 Recent Sessions</h2>
+                <div class="table-container">
+                    <table id="sessionsTable">
+                        <thead>
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Device</th>
+                                <th>Type</th>
+                                <th>Start Time</th>
+                                <th>Duration</th>
+                                <th>Cycles</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="sessionsTableBody">
+                            <tr>
+                                <td colspan="7" class="loading">Loading sessions...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Recent Events -->
+            <section class="dashboard-section">
+                <h2>⚡ Recent Events</h2>
+                <div class="events-container">
+                    <div id="eventsList" class="events-list">
+                        <div class="loading">Loading recent events...</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Real-time Monitor -->
+            <section class="dashboard-section">
+                <h2>📡 Real-time Monitor</h2>
+                <div id="realtimeEvents" class="realtime-events">
+                    <div class="info-message">Waiting for real-time data...</div>
+                </div>
+            </section>
+        </main>
+
+        <!-- Session Details Modal -->
+        <div id="sessionModal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Session Details</h3>
+                    <span class="close" id="closeModal">&times;</span>
+                </div>
+                <div class="modal-body" id="sessionDetails">
+                    <div class="loading">Loading session details...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script src="app.js"></script>
+</body>
+</html>
