@@ -154,6 +154,14 @@ cd ESP32-Rehab-Hand-Exoskeleton
   - Check console logs for error messages
   - Try "🔄 Run Servo Test" first to verify connection
 
+## 📖 Detailed Documentation
+
+- [Getting Started Guide](GETTING_STARTED.md) - Complete setup instructions
+- [Hardware Setup](HARDWARE_SETUP.md) - Wiring diagrams and connections
+- [Server Setup Guide](SERVER_SETUP.md) - MQTT broker and database infrastructure
+- [Project Structure](PROJECT_STRUCTURE.md) - Code organization and architecture
+- [Changelog](CHANGELOG.md) - Version history and updates
+
 ## Demo Script
 
 1. **Setup**: Connect hardware, upload firmware, start mobile app
@@ -190,7 +198,10 @@ cd ESP32-Rehab-Hand-Exoskeleton
 - Position feedback sensors
 - Force control algorithms
 - Multi-device support
-- Data logging capabilities
+- ✅ **Data logging capabilities** (implemented via MQTT + MariaDB)
+- Web dashboard for data visualization
+- iOS mobile app support
+- GraphDB integration for advanced analytics
 
 ## Safety Notes
 
