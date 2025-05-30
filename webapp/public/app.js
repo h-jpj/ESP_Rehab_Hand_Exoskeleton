@@ -23,14 +23,18 @@ class RehabDashboard {
             this.updateConnectionStatus(false);
         });
 
-        this.socket.on('update', (data) => {
-            this.handleRealTimeUpdate(data);
+        this.socket.on('system_status', (data) => {
+            this.handleRealTimeUpdate({...data, type: 'system_status'});
+        });
+
+        this.socket.on('movement_command', (data) => {
+            this.handleRealTimeUpdate({...data, type: 'movement_command'});
         });
 
         // Modal events
         const modal = document.getElementById('sessionModal');
         const closeModal = document.getElementById('closeModal');
-        
+
         closeModal.onclick = () => {
             modal.style.display = 'none';
         };
@@ -90,7 +94,7 @@ class RehabDashboard {
 
     updateDeviceStatus(devices) {
         const container = document.getElementById('deviceStatus');
-        
+
         if (!devices || devices.length === 0) {
             container.innerHTML = '<div class="info-message">No devices found</div>';
             return;
@@ -118,7 +122,7 @@ class RehabDashboard {
             const sessions = await response.json();
 
             const tbody = document.getElementById('sessionsTableBody');
-            
+
             if (sessions.length === 0) {
                 tbody.innerHTML = '<tr><td colspan="7" class="info-message">No sessions found</td></tr>';
                 return;
@@ -152,7 +156,7 @@ class RehabDashboard {
             const events = await response.json();
 
             const container = document.getElementById('eventsList');
-            
+
             if (events.length === 0) {
                 container.innerHTML = '<div class="info-message">No recent events</div>';
                 return;
@@ -200,7 +204,7 @@ class RehabDashboard {
                         <div><strong>Total Cycles:</strong> ${data.session.total_cycles || 0}</div>
                     </div>
                 </div>
-                
+
                 <div class="session-events">
                     <h4>Session Events (${data.events.length})</h4>
                     <div class="events-timeline">
@@ -229,7 +233,7 @@ class RehabDashboard {
 
     handleRealTimeUpdate(data) {
         console.log('Real-time update:', data);
-        
+
         const container = document.getElementById('realtimeEvents');
         const eventElement = document.createElement('div');
         eventElement.className = `realtime-event ${data.type}`;
@@ -282,7 +286,7 @@ class RehabDashboard {
 
     formatDuration(seconds) {
         if (!seconds || seconds === 0) return '0s';
-        
+
         const hours = Math.floor(seconds / 3600);
         const minutes = Math.floor((seconds % 3600) / 60);
         const secs = seconds % 60;

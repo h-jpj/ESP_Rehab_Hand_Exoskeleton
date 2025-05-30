@@ -19,8 +19,8 @@ const PORT = process.env.PORT || 3000;
 // Database configuration
 const dbConfig = {
   host: process.env.DB_HOST || 'mariadb',
-  user: process.env.DB_USER || 'jay',
-  password: process.env.DB_PASS || 'aes',
+  user: process.env.DB_USER || 'your_db_username',
+  password: process.env.DB_PASS || 'your_db_password',
   database: process.env.DB_NAME || 'rehab_exoskeleton',
   waitForConnections: true,
   connectionLimit: 10,

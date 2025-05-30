@@ -22,12 +22,22 @@ yarn-error.log*
 # Dependency directories
 node_modules/
 
-# Environment variables
+# Environment variables and sensitive data
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+config.h.local
+secrets.h
+credentials.json
+src/config.h
+
+# Docker data volumes (contains database data)
+mqtt-bridge/node_modules/
+webapp/node_modules/
+mariadb_data/
+mosquitto_data/
 
 # Build artifacts
 build/

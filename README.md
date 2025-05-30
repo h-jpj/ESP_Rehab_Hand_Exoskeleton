@@ -1,6 +1,6 @@
 # ESP32 Rehabilitation Hand Exoskeleton
 
-A Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Native mobile app. Designed for rehabilitation hand exoskeleton demonstrations with multiple movement patterns and power optimization.
+A Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Native mobile app. Designed for rehabilitation hand exoskeleton demonstrations with multiple movement patterns and power optimization. This is a direct upgrade/fork from the [Stroke-Rehabilitation-Glove](https://github.com/h-jpj/Stroke-Rehabilitation-Glove).
 
 ## Hardware Requirements
 
@@ -43,6 +43,31 @@ A Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Nativ
 git clone https://github.com/your-username/ESP32-Rehab-Hand-Exoskeleton.git
 cd ESP32-Rehab-Hand-Exoskeleton
 ```
+
+### 🔒 Security Configuration
+
+**⚠️ IMPORTANT: Configure your credentials before building**
+
+1. **Copy environment template files:**
+   ```bash
+   cp .env.example .env
+   cp src/config.h.example src/config.h
+   ```
+
+2. **Update with your actual credentials:**
+   ```bash
+   # Edit .env with your server and database settings
+   nano .env
+
+   # Edit config.h with your WiFi and MQTT credentials
+   nano src/config.h
+   ```
+
+3. **Security Notes:**
+   - Never commit `.env` or `src/config.h` to version control
+   - Use strong passwords for production deployments
+   - Ensure your WiFi network uses WPA2/WPA3 encryption
+   - Change default database credentials before deployment
 
 ## Software Setup
 
@@ -101,10 +126,12 @@ This project includes a complete backend infrastructure using Docker containers 
 - **🔧 phpMyAdmin**: Database management interface for development
 
 The Docker setup provides:
-- **Real-time data logging** from ESP32 via WiFi/MQTT
+- **Real-time data logging** from ESP32 via WiFi/MQTT with synchronized timestamps
 - **Professional web interface** accessible from any browser
 - **Comprehensive session tracking** and progress monitoring
 - **Scalable architecture** ready for multiple devices
+
+**⏰ Time Synchronization**: The system uses Unix timestamps for accurate data correlation across devices. The ESP32 automatically synchronizes with NTP servers when WiFi connects, ensuring all logged events have precise timestamps for medical documentation and progress tracking.
 
 **📋 Quick Setup**: Deploy all services with a single `docker-compose up -d` command.
 
@@ -222,11 +249,29 @@ The Docker setup provides:
 - iOS mobile app support
 - GraphDB integration for advanced analytics
 
+## 🔒 Security & Privacy
+
+### Data Protection
+- **Local Processing**: All data stays on your local network
+- **No Cloud Dependencies**: Complete offline operation capability
+- **Encrypted Communication**: WiFi WPA2/WPA3 encryption
+- **Access Control**: Database and MQTT authentication required
+
+### Credential Management
+- **Environment Files**: Sensitive data in `.env` and `config.h` (not committed)
+- **Strong Passwords**: Minimum 12 characters recommended
+- **Regular Updates**: Change credentials periodically
+- **Network Security**: Use secure WiFi networks only
+
+### Files Never Committed to Git
+```
+.env                   # Server and database credentials
+src/config.h           # WiFi and MQTT credentials
+mariadb_data/          # Database files
+mosquitto_data/        # MQTT broker data
+```
+
 ## Safety Notes
 
-⚠️ **Important**: This is a demonstration project. For actual rehabilitation use:
-- Implement proper safety interlocks
-- Add emergency stop functionality
-- Use medical-grade components
-- Conduct proper testing and validation
-- Ensure regulatory compliance
+⚠️ **Important**: 
+This is a demonstration project. Not certified for medical use nor is it intended for proper use. 

@@ -1,6 +1,48 @@
 # Server Setup Guide - MQTT & Database Infrastructure
 
-This guide covers setting up the backend infrastructure for WiFi data logging using Docker Compose with Mosquitto MQTT broker and MariaDB database. For ease of understanding for this example my user is `jay` and the password is `aes`. Please feel free to replace these with your own credentials.
+This guide covers setting up the backend infrastructure for WiFi data logging using Docker Compose with Mosquitto MQTT broker and MariaDB database.
+
+## 🔒 **Security Configuration**
+
+**⚠️ IMPORTANT: Configure your credentials before deployment**
+
+### Environment Setup
+
+1. **Copy environment template:**
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Edit with your actual credentials:**
+   ```bash
+   nano .env
+   ```
+
+3. **Update these critical settings:**
+   ```bash
+   # WiFi Configuration
+   WIFI_SSID=your_actual_wifi_name
+   WIFI_PASSWORD=your_secure_wifi_password
+
+   # Server Configuration
+   SERVER_IP=your_server_ip_address
+
+   # Database Configuration
+   DB_ROOT_PASSWORD=your_secure_root_password
+   DB_USER=your_db_username
+   DB_PASSWORD=your_secure_db_password
+
+   # MQTT Configuration
+   MQTT_USER=your_mqtt_username
+   MQTT_PASSWORD=your_secure_mqtt_password
+   ```
+
+4. **Security Best Practices:**
+   - Use strong, unique passwords (minimum 12 characters)
+   - Never commit `.env` or `src/config.h` to version control
+   - Regularly update credentials
+   - Use WPA2/WPA3 for WiFi encryption
+   - Consider VPN for remote access
 
 ## 🏗️ **Infrastructure Overview**
 
@@ -12,9 +54,10 @@ ESP32 → WiFi → MQTT Broker → Database → Web Interface
 
 ### Components
 - **Mosquitto MQTT Broker**: Message routing and authentication
-- **MariaDB Database**: Session and event data storage
-- **Web Dashboard**: Real-time data visualization and monitoring
+- **MariaDB Database**: Session and event data storage with proper timestamps
+- **Web Dashboard**: Real-time data visualization and monitoring with WebSocket updates
 - **phpMyAdmin**: Database management interface
+- **MQTT Bridge**: Real-time data bridge with WebSocket support for live updates
 - **Docker Compose**: Container orchestration
 
 ---
@@ -56,6 +99,8 @@ cd /opt/stacks/mqtt
 
 ### Step 2: Create Docker Compose Configuration
 
+**⚠️ IMPORTANT**: Before creating the compose.yaml, ensure you have configured your `.env` file with actual credentials.
+
 Create `compose.yaml`:
 ```yaml
 services:
@@ -78,10 +123,10 @@ services:
     image: mariadb:latest
     container_name: mariadb_mqtt
     environment:
-      MYSQL_ROOT_PASSWORD: aes_root_2024
-      MYSQL_DATABASE: rehab_exoskeleton
-      MYSQL_USER: jay
-      MYSQL_PASSWORD: aes
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
     volumes:
       - ./mariadb_data:/var/lib/mysql
       - ./mariadb_config:/etc/mysql/conf.d
@@ -97,9 +142,9 @@ services:
     container_name: phpmyadmin_mqtt
     environment:
       PMA_HOST: mariadb
-      PMA_USER: jay
-      PMA_PASSWORD: aes
-      MYSQL_ROOT_PASSWORD: aes_root_2024
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     ports:
       - 8080:80
     depends_on:
@@ -118,9 +163,9 @@ services:
       - mqtt_network
     environment:
       - DB_HOST=mariadb
-      - DB_USER=jay
-      - DB_PASS=aes
-      - DB_NAME=rehab_exoskeleton
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASSWORD}
+      - DB_NAME=${DB_NAME}
     restart: unless-stopped
 
 networks:
@@ -156,10 +201,10 @@ password_file /mosquitto/config/pwfile
 
 Create MQTT user credentials:
 ```bash
-# Create password file
-sudo docker run --rm -v $(pwd)/config:/mosquitto/config eclipse-mosquitto mosquitto_passwd -c /mosquitto/config/pwfile jay
+# Create password file (replace 'your_mqtt_username' with your actual username)
+sudo docker run --rm -v $(pwd)/config:/mosquitto/config eclipse-mosquitto mosquitto_passwd -c /mosquitto/config/pwfile your_mqtt_username
 
-# Enter password when prompted: aes
+# Enter your secure password when prompted
 ```
 
 Set permissions:
@@ -306,17 +351,17 @@ sudo docker-compose logs
 # Install MQTT clients (if not already installed)
 sudo apt install mosquitto-clients
 
-# Test publish
-mosquitto_pub -h localhost -p 1883 -u jay -P aes -t "test/topic" -m "Hello MQTT"
+# Test publish (replace with your actual MQTT credentials)
+mosquitto_pub -h localhost -p 1883 -u your_mqtt_username -P your_mqtt_password -t "test/topic" -m "Hello MQTT"
 
 # Test subscribe (in another terminal)
-mosquitto_sub -h localhost -p 1883 -u jay -P aes -t "test/topic"
+mosquitto_sub -h localhost -p 1883 -u your_mqtt_username -P your_mqtt_password -t "test/topic"
 ```
 
 ### Test Database Connection
 ```bash
-# Connect to MariaDB
-sudo docker exec -it mariadb_mqtt mariadb -u jay -paes rehab_exoskeleton
+# Connect to MariaDB (replace with your actual credentials)
+sudo docker exec -it mariadb_mqtt mariadb -u your_db_username -pyour_db_password rehab_exoskeleton
 
 # Verify tables (if init script didn't run, create manually)
 SHOW TABLES;
@@ -352,11 +397,11 @@ Open your browser and navigate to `http://your-server-ip:3000` to access the das
 
 | Service | URL/Address | Credentials |
 |---------|-------------|-------------|
-| **MQTT Broker** | `localhost:1883` | jay / aes |
-| **MQTT WebSocket** | `localhost:9001` | jay / aes |
-| **MariaDB** | `localhost:3306` | jay / aes |
+| **MQTT Broker** | `localhost:1883` | your_mqtt_username / your_mqtt_password |
+| **MQTT WebSocket** | `localhost:9001` | your_mqtt_username / your_mqtt_password |
+| **MariaDB** | `localhost:3306` | your_db_username / your_db_password |
 | **Web Dashboard** | `http://localhost:3000` | None (public) |
-| **phpMyAdmin** | `http://localhost:8080` | jay / aes |
+| **phpMyAdmin** | `http://localhost:8080` | your_db_username / your_db_password |
 
 ---
 
@@ -383,14 +428,14 @@ sudo docker-compose up -d
 
 ### Database Management
 ```bash
-# Connect to database
-sudo docker exec -it mariadb_mqtt mariadb -u jay -paes rehab_exoskeleton
+# Connect to database (replace with your actual credentials)
+sudo docker exec -it mariadb_mqtt mariadb -u your_db_username -pyour_db_password rehab_exoskeleton
 
 # Backup database
-sudo docker exec mariadb_mqtt mysqldump -u jay -paes rehab_exoskeleton > backup.sql
+sudo docker exec mariadb_mqtt mysqldump -u your_db_username -pyour_db_password rehab_exoskeleton > backup.sql
 
 # Restore database
-sudo docker exec -i mariadb_mqtt mysql -u jay -paes rehab_exoskeleton < backup.sql
+sudo docker exec -i mariadb_mqtt mysql -u your_db_username -pyour_db_password rehab_exoskeleton < backup.sql
 ```
 
 ---
@@ -398,7 +443,7 @@ sudo docker exec -i mariadb_mqtt mysql -u jay -paes rehab_exoskeleton < backup.s
 ## 🛡️ **Security Considerations**
 
 ### Current Setup (Development)
-- **MQTT Authentication**: Username/password (jay/aes)
+- **MQTT Authentication**: Username/password (configured in .env)
 - **Database Access**: Local network only
 - **Web Interface**: No HTTPS (local development)
 
@@ -441,8 +486,8 @@ mosquitto_pub -h localhost -p 1883 -t "test" -m "test"
 # Check MariaDB logs
 sudo docker-compose logs mariadb
 
-# Verify database exists
-sudo docker exec -it mariadb_mqtt mariadb -u root -paes_root_2024 -e "SHOW DATABASES;"
+# Verify database exists (replace with your actual root password)
+sudo docker exec -it mariadb_mqtt mariadb -u root -pyour_root_password -e "SHOW DATABASES;"
 ```
 
 **Web app build fails with npm ci error:**
