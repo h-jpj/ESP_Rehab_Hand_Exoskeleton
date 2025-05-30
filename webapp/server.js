@@ -61,7 +61,11 @@ app.get('/api/sessions', async (req, res) => {
         end_time,
         duration_seconds,
         session_type,
+        session_status,
+        total_movements,
+        successful_movements,
         total_cycles,
+        end_reason,
         created_at
       FROM sessions
       ORDER BY start_time DESC
@@ -151,29 +155,76 @@ app.get('/api/status', async (req, res) => {
     const [statsRows] = await pool.execute(`
       SELECT
         COUNT(*) as total_sessions,
-        SUM(duration_seconds) as total_duration,
-        AVG(duration_seconds) as avg_duration,
-        SUM(total_cycles) as total_cycles
+        SUM(COALESCE(duration_seconds, 0)) as total_duration,
+        AVG(COALESCE(duration_seconds, 0)) as avg_duration,
+        SUM(COALESCE(total_cycles, 0)) as total_cycles,
+        SUM(COALESCE(total_movements, 0)) as total_movements,
+        SUM(COALESCE(successful_movements, 0)) as successful_movements
       FROM sessions
+      WHERE session_status IN ('completed', 'interrupted')
     `);
 
     // Get today's sessions
     const [todayRows] = await pool.execute(`
-      SELECT COUNT(*) as today_sessions
+      SELECT
+        COUNT(*) as today_sessions,
+        SUM(COALESCE(duration_seconds, 0)) as today_duration,
+        SUM(COALESCE(total_cycles, 0)) as today_cycles
       FROM sessions
       WHERE DATE(start_time) = CURDATE()
+        AND session_status IN ('completed', 'interrupted')
     `);
 
     res.json({
       devices: statusRows,
       statistics: {
         ...statsRows[0],
-        today_sessions: todayRows[0].today_sessions
+        today_sessions: todayRows[0].today_sessions,
+        today_duration: todayRows[0].today_duration || 0,
+        today_cycles: todayRows[0].today_cycles || 0
       }
     });
   } catch (error) {
     console.error('Error fetching status:', error);
     res.status(500).json({ error: 'Failed to fetch status' });
+  }
+});
+
+// Get statistics for dashboard
+app.get('/api/stats', async (req, res) => {
+  try {
+    // Get overall statistics (including active sessions)
+    const [statsRows] = await pool.execute(`
+      SELECT
+        COUNT(*) as total_sessions,
+        SUM(COALESCE(duration_seconds, 0)) as total_duration,
+        SUM(COALESCE(total_cycles, 0)) as total_cycles,
+        SUM(COALESCE(total_movements, 0)) as total_movements,
+        SUM(COALESCE(successful_movements, 0)) as successful_movements
+      FROM sessions
+    `);
+
+    // Get today's sessions (including active)
+    const [todayRows] = await pool.execute(`
+      SELECT
+        COUNT(*) as today_sessions,
+        SUM(COALESCE(duration_seconds, 0)) as today_duration,
+        SUM(COALESCE(total_cycles, 0)) as today_cycles
+      FROM sessions
+      WHERE DATE(start_time) = CURDATE()
+    `);
+
+    res.json({
+      total_sessions: statsRows[0].total_sessions || 0,
+      today_sessions: todayRows[0].today_sessions || 0,
+      total_duration: statsRows[0].total_duration || 0,
+      total_cycles: statsRows[0].total_cycles || 0,
+      total_movements: statsRows[0].total_movements || 0,
+      successful_movements: statsRows[0].successful_movements || 0
+    });
+  } catch (error) {
+    console.error('Error fetching stats:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });
 

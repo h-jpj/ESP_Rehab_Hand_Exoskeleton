@@ -15,12 +15,117 @@ const SERVICE_UUID = '4fafc201-1fb5-459e-8fcc-c5c9c331914b';
 const CHARACTERISTIC_UUID = 'beb5483e-36e1-4688-b7f5-ea07361b26a8';
 const DEVICE_NAME = 'ESP32_Servo';
 
+// Session management types
+interface SessionState {
+  isActive: boolean;
+  sessionId: string | null;
+  startTime: Date | null;
+  duration: number;
+  movementsCompleted: number;
+  sessionType: 'unknown' | 'sequential' | 'simultaneous' | 'mixed' | 'test';
+}
+
 export default function App() {
   const [bleManager, setBleManager] = useState<BleManager | null>(null);
   const [device, setDevice] = useState<Device | null>(null);
   const [isConnected, setIsConnected] = useState<boolean>(false);
   const [characteristic, setCharacteristic] = useState<Characteristic | null>(null);
   const [initError, setInitError] = useState<string | null>(null);
+
+  // Session management state
+  const [sessionState, setSessionState] = useState<SessionState>({
+    isActive: false,
+    sessionId: null,
+    startTime: null,
+    duration: 0,
+    movementsCompleted: 0,
+    sessionType: 'unknown'
+  });
+
+  // Timer for session duration updates
+  const [sessionTimer, setSessionTimer] = useState<NodeJS.Timeout | null>(null);
+
+  // Session management functions
+  const startSession = () => {
+    const now = new Date();
+    setSessionState({
+      isActive: true,
+      sessionId: `SES_${now.getTime()}`,
+      startTime: now,
+      duration: 0,
+      movementsCompleted: 0,
+      sessionType: 'unknown'
+    });
+
+    // Start timer to update duration every second
+    const timer = setInterval(() => {
+      setSessionState(prev => {
+        if (prev.isActive && prev.startTime) {
+          return {
+            ...prev,
+            duration: Math.floor((Date.now() - prev.startTime.getTime()) / 1000)
+          };
+        }
+        return prev;
+      });
+    }, 1000);
+
+    setSessionTimer(timer);
+    console.log('Session started automatically on BLE connection');
+  };
+
+  const endSession = async () => {
+    if (!sessionState.isActive) {
+      Alert.alert('No Active Session', 'There is no active session to end.');
+      return;
+    }
+
+    try {
+      // Send END_SESSION command to ESP32
+      await sendCommand('END_SESSION', 'Session ended successfully!');
+
+      // Clear timer
+      if (sessionTimer) {
+        clearInterval(sessionTimer);
+        setSessionTimer(null);
+      }
+
+      // Update session state
+      setSessionState(prev => ({
+        ...prev,
+        isActive: false
+      }));
+
+      console.log('Session ended by user request');
+    } catch (error) {
+      console.error('Error ending session:', error);
+      Alert.alert('Error', 'Failed to end session properly');
+    }
+  };
+
+  const updateMovementCount = (command: string) => {
+    if (sessionState.isActive) {
+      setSessionState(prev => {
+        const newCount = prev.movementsCompleted + 1;
+        let newType = prev.sessionType;
+
+        // Update session type based on commands
+        if (command === '1') {
+          newType = prev.sessionType === 'simultaneous' ? 'mixed' : 'sequential';
+        } else if (command === '2') {
+          newType = prev.sessionType === 'sequential' ? 'mixed' : 'simultaneous';
+        } else if (command === 'TEST') {
+          newType = prev.sessionType === 'unknown' ? 'test' : prev.sessionType;
+        }
+
+        return {
+          ...prev,
+          movementsCompleted: newCount,
+          sessionType: newType
+        };
+      });
+    }
+  };
 
   // Request Bluetooth permissions for Android
   const requestBluetoothPermissions = async (): Promise<boolean> => {
@@ -159,12 +264,26 @@ export default function App() {
           setIsConnected(true);
           console.log('Connected successfully!');
 
+          // Auto-start session on successful connection
+          startSession();
+
           // Monitor disconnection
           connectedDevice.onDisconnected((error, device) => {
             console.log('Device disconnected:', device?.name);
             setIsConnected(false);
             setCharacteristic(null);
             setDevice(null);
+
+            // End session on disconnection
+            if (sessionState.isActive) {
+              if (sessionTimer) {
+                clearInterval(sessionTimer);
+                setSessionTimer(null);
+              }
+              setSessionState(prev => ({ ...prev, isActive: false }));
+              console.log('Session ended due to disconnection');
+            }
+
             if (error) {
               console.error('Disconnection error:', error);
             }
@@ -240,6 +359,12 @@ export default function App() {
         console.log(`Sending command: "${command}" as base64: "${base64Command}"`);
         await characteristic.writeWithResponse(base64Command);
         console.log(`Command sent successfully: ${command}`);
+
+        // Track movement commands in session
+        if (['1', '2', 'TEST'].includes(command)) {
+          updateMovementCount(command);
+        }
+
         Alert.alert('Success', description);
       } else {
         Alert.alert('Error', 'Could not establish connection to ESP32');
@@ -400,9 +525,34 @@ Check console for full details`;
           Error: {initError}
         </Text>
       ) : (
-        <Text style={styles.status}>
-          ESP32 Status: {isConnected ? 'Connected ✅' : 'Not Connected ❌'}
-        </Text>
+        <>
+          <Text style={styles.status}>
+            ESP32 Status: {isConnected ? 'Connected ✅' : 'Not Connected ❌'}
+          </Text>
+
+          {/* Session Status Display */}
+          {isConnected && (
+            <View style={styles.sessionContainer}>
+              <Text style={styles.sessionTitle}>Therapy Session</Text>
+              {sessionState.isActive ? (
+                <>
+                  <Text style={styles.sessionStatus}>🟢 Session Active</Text>
+                  <Text style={styles.sessionInfo}>
+                    Duration: {Math.floor(sessionState.duration / 60)}:{(sessionState.duration % 60).toString().padStart(2, '0')}
+                  </Text>
+                  <Text style={styles.sessionInfo}>
+                    Movements: {sessionState.movementsCompleted}
+                  </Text>
+                  <Text style={styles.sessionInfo}>
+                    Type: {sessionState.sessionType.charAt(0).toUpperCase() + sessionState.sessionType.slice(1)}
+                  </Text>
+                </>
+              ) : (
+                <Text style={styles.sessionStatus}>⚪ No Active Session</Text>
+              )}
+            </View>
+          )}
+        </>
       )}
 
       {!isConnected && !initError && (
@@ -461,6 +611,16 @@ Check console for full details`;
               <TouchableOpacity style={[styles.button, styles.stopButton]} onPress={stopServos}>
                 <Text style={styles.buttonText}>⏹️ Stop All Servos</Text>
               </TouchableOpacity>
+
+              {/* End Session Button */}
+              {sessionState.isActive && (
+                <TouchableOpacity
+                  style={[styles.button, styles.endSessionButton]}
+                  onPress={endSession}
+                >
+                  <Text style={styles.buttonText}>🛑 End Session</Text>
+                </TouchableOpacity>
+              )}
             </>
           )}
 
@@ -568,5 +728,37 @@ const styles = StyleSheet.create({
     marginTop: 30,
     paddingHorizontal: 20,
     lineHeight: 24,
+  },
+  // Session management styles
+  sessionContainer: {
+    backgroundColor: '#E8F4FD',
+    padding: 15,
+    borderRadius: 10,
+    marginBottom: 20,
+    marginHorizontal: 20,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#007AFF',
+  },
+  sessionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#007AFF',
+    marginBottom: 10,
+  },
+  sessionStatus: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#333',
+    marginBottom: 8,
+  },
+  sessionInfo: {
+    fontSize: 14,
+    color: '#666',
+    marginBottom: 4,
+  },
+  endSessionButton: {
+    backgroundColor: '#FF3B30',
+    marginTop: 10,
   },
 });

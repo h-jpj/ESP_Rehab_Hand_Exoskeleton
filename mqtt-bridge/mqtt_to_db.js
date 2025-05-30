@@ -8,8 +8,8 @@ const io = require('socket.io-client');
 const MQTT_CONFIG = {
     host: process.env.MQTT_HOST || 'mosquitto',
     port: 1883,
-    username: process.env.MQTT_USER || 'your_mqtt_username',
-    password: process.env.MQTT_PASSWORD || 'your_mqtt_password'
+    username: process.env.MQTT_USER || 'your_username',
+    password: process.env.MQTT_PASSWORD || 'your_password'
 };
 
 const DB_CONFIG = {
@@ -25,7 +25,10 @@ const TOPICS = [
     'rehab_exo/ESP32_001/movement/command',
     'rehab_exo/ESP32_001/system/status',
     'rehab_exo/ESP32_001/connection/wifi',
-    'rehab_exo/ESP32_001/connection/ble'
+    'rehab_exo/ESP32_001/connection/ble',
+    'rehab_exo/ESP32_001/session/start',
+    'rehab_exo/ESP32_001/session/end',
+    'rehab_exo/ESP32_001/session/progress'
 ];
 
 let dbPool;
@@ -128,6 +131,12 @@ async function processMessage(topic, data) {
         await handleSystemStatus(data);
     } else if (event_type === 'ble_status' || event_type === 'wifi_status') {
         await handleConnectionEvent(data);
+    } else if (event_type === 'session_start') {
+        await handleSessionStart(data);
+    } else if (event_type === 'session_end') {
+        await handleSessionEnd(data);
+    } else if (event_type === 'session_progress') {
+        await handleSessionProgress(data);
     } else {
         console.log(`ℹ️  Unhandled event type: ${event_type}`);
     }
@@ -137,21 +146,22 @@ async function processMessage(topic, data) {
 async function handleMovementCommand(data) {
     try {
         const { device_id, timestamp, data: eventData } = data;
-        const { command, response_time_ms, ble_connected } = eventData;
+        const { command, response_time_ms, ble_connected, session_id } = eventData;
 
         // Insert into events table
         await dbPool.execute(`
             INSERT INTO events (
                 session_id, timestamp, event_type, command,
-                response_time_ms, servo_data, created_at
-            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, ?, ?, NOW())
+                response_time_ms, servo_data, movement_successful, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, ?, ?, ?, NOW())
         `, [
-            null, // session_id - we'll implement session management in Phase 2
+            session_id || null,
             timestamp,
             'movement_command',
             command,
             response_time_ms,
-            JSON.stringify({ ble_connected })
+            JSON.stringify({ ble_connected }),
+            true // Assume successful unless we get error data
         ]);
 
         console.log(`✅ Stored movement command: ${command}`);
@@ -231,6 +241,141 @@ async function handleConnectionEvent(data) {
 
     } catch (error) {
         console.error('❌ Error storing connection event:', error);
+    }
+}
+
+// Handle session start events
+async function handleSessionStart(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const { session_id, session_type, ble_connected, auto_started } = eventData;
+
+        // Insert new session into sessions table
+        await dbPool.execute(`
+            INSERT INTO sessions (
+                session_id, device_id, start_time, session_type,
+                session_status, total_movements, successful_movements,
+                total_cycles, created_at
+            ) VALUES (?, ?, FROM_UNIXTIME(?), ?, 'active', 0, 0, 0, NOW())
+        `, [
+            session_id,
+            device_id,
+            timestamp,
+            session_type
+        ]);
+
+        // Insert session start event
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id,
+            timestamp,
+            'session_start',
+            JSON.stringify({ ble_connected, auto_started })
+        ]);
+
+        console.log(`✅ Session started: ${session_id} (${session_type})`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('session_start', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing session start:', error);
+    }
+}
+
+// Handle session end events
+async function handleSessionEnd(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const {
+            session_id, session_type, end_reason, total_duration,
+            movements_completed, successful_movements, cycles_completed
+        } = eventData;
+
+        // Update session in sessions table
+        await dbPool.execute(`
+            UPDATE sessions SET
+                end_time = FROM_UNIXTIME(?),
+                duration_seconds = ?,
+                session_status = ?,
+                total_movements = ?,
+                successful_movements = ?,
+                total_cycles = ?,
+                end_reason = ?
+            WHERE session_id = ?
+        `, [
+            timestamp,
+            Math.floor(total_duration / 1000), // Convert ms to seconds
+            end_reason === 'user_requested' ? 'completed' : 'interrupted',
+            movements_completed,
+            successful_movements,
+            cycles_completed,
+            end_reason,
+            session_id
+        ]);
+
+        // Insert session end event
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id,
+            timestamp,
+            'session_end',
+            JSON.stringify({
+                end_reason, total_duration, movements_completed,
+                successful_movements, cycles_completed
+            })
+        ]);
+
+        console.log(`✅ Session ended: ${session_id} (Duration: ${Math.floor(total_duration / 1000)}s, Movements: ${movements_completed})`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('session_end', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing session end:', error);
+    }
+}
+
+// Handle session progress events
+async function handleSessionProgress(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const {
+            session_id, completed_cycles, total_cycles,
+            progress_percent, movements_completed
+        } = eventData;
+
+        // Update session progress (optional - for real-time tracking)
+        await dbPool.execute(`
+            UPDATE sessions SET
+                total_movements = ?,
+                total_cycles = ?
+            WHERE session_id = ? AND session_status = 'active'
+        `, [
+            movements_completed,
+            completed_cycles,
+            session_id
+        ]);
+
+        console.log(`📊 Session progress: ${session_id} (${progress_percent.toFixed(1)}% - ${completed_cycles}/${total_cycles} cycles)`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('session_progress', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing session progress:', error);
     }
 }
 

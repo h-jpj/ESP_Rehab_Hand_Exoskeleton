@@ -278,12 +278,17 @@ CREATE TABLE IF NOT EXISTS sessions (
     start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     end_time TIMESTAMP NULL,
     duration_seconds INT DEFAULT 0,
-    session_type ENUM('sequential', 'simultaneous', 'both') NOT NULL,
+    session_type ENUM('unknown', 'sequential', 'simultaneous', 'mixed', 'test') DEFAULT 'unknown',
+    session_status ENUM('active', 'completed', 'interrupted') DEFAULT 'active',
+    total_movements INT DEFAULT 0,
+    successful_movements INT DEFAULT 0,
     total_cycles INT DEFAULT 0,
+    end_reason VARCHAR(50) DEFAULT 'user_requested',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_session_id (session_id),
     INDEX idx_device_id (device_id),
-    INDEX idx_start_time (start_time)
+    INDEX idx_start_time (start_time),
+    INDEX idx_session_status (session_status)
 );
 
 -- Events table for detailed logging
@@ -291,11 +296,13 @@ CREATE TABLE IF NOT EXISTS events (
     id INT AUTO_INCREMENT PRIMARY KEY,
     session_id VARCHAR(50),
     timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    event_type ENUM('session_start', 'session_end', 'movement_command', 'movement_complete', 'ble_connect', 'ble_disconnect', 'system_error') NOT NULL,
-    command VARCHAR(10),
+    event_type ENUM('session_start', 'session_end', 'session_interrupted', 'movement_command', 'movement_complete', 'ble_connect', 'ble_disconnect', 'system_error') NOT NULL,
+    command VARCHAR(20),
     response_time_ms INT,
     servo_data JSON,
     error_message TEXT,
+    cycles_completed INT DEFAULT 0,
+    movement_successful BOOLEAN DEFAULT TRUE,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (session_id) REFERENCES sessions(session_id) ON DELETE CASCADE,
     INDEX idx_session_id (session_id),
@@ -383,13 +390,21 @@ curl http://localhost:3000/api/sessions
 Open your browser and navigate to `http://your-server-ip:3000` to access the dashboard.
 
 **Expected Dashboard Features:**
-- 📊 **System Overview**: Total sessions, today's activity, device status
+- 📊 **System Overview**: Total sessions, today's activity, total duration, total cycles
 - 🔌 **Device Status**: ESP32 online/offline status and health metrics
-- 📋 **Recent Sessions**: List of therapy sessions with details
-- ⚡ **Recent Events**: Real-time activity log
+- 📋 **Recent Sessions**: List of therapy sessions with accurate duration and cycle tracking
+- ⚡ **Recent Events**: Real-time activity log including session start/end events
 - 📡 **Live Monitor**: Real-time updates when ESP32 is active
+- 🎯 **Session Management**: Proper session tracking with manual termination support
+- 📈 **Cycle Tracking**: Accurate movement cycle counting and progress monitoring
 
 **Initial State**: The dashboard will show empty data until ESP32 starts sending MQTT data.
+
+**Recent Improvements:**
+- ✅ **Fixed Duration Calculation**: Sessions now show accurate durations (e.g., "5m 30s" instead of "3117h")
+- ✅ **Cycle Tracking**: Total cycles are now properly tracked and displayed
+- ✅ **Manual Session End**: "End Session" button in mobile app properly terminates sessions
+- ✅ **Real-time Statistics**: Dashboard updates immediately when sessions end
 
 ---
 
@@ -436,6 +451,16 @@ sudo docker exec mariadb_mqtt mysqldump -u your_db_username -pyour_db_password r
 
 # Restore database
 sudo docker exec -i mariadb_mqtt mysql -u your_db_username -pyour_db_password rehab_exoskeleton < backup.sql
+
+# Clear all data (for fresh start)
+sudo docker exec -it mariadb_mqtt mariadb -u your_db_username -pyour_db_password rehab_exoskeleton -e "
+DELETE FROM sessions;
+DELETE FROM events;
+DELETE FROM system_status;
+ALTER TABLE sessions AUTO_INCREMENT = 1;
+ALTER TABLE events AUTO_INCREMENT = 1;
+ALTER TABLE system_status AUTO_INCREMENT = 1;
+"
 ```
 
 ---

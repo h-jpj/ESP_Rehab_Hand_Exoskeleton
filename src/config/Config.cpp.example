@@ -1,0 +1,31 @@
+#include "Config.h"
+
+// ⚠️  SECURITY NOTICE ⚠️
+// This is a template file. Copy this to Config.cpp and update with your actual credentials.
+// The Config.cpp file should be in .gitignore and never committed to version control.
+
+// WiFi Configuration
+const char* WIFI_SSID = "your_wifi_network_name";
+const char* WIFI_PASSWORD = "your_wifi_password";
+
+// MQTT Configuration
+const char* MQTT_SERVER = "your_server_ip";
+const int MQTT_PORT = 1883;
+const char* MQTT_USER = "your_mqtt_username";
+const char* MQTT_PASSWORD = "your_mqtt_password";
+
+// Device Configuration
+const char* DEVICE_ID = "ESP32_001";
+const char* FIRMWARE_VERSION = "1.0.0";
+
+// MQTT Topics
+const char* TOPIC_BASE = "rehab_exo/ESP32_001";
+const char* TOPIC_MOVEMENT_COMMAND = "rehab_exo/ESP32_001/movement/command";
+const char* TOPIC_SYSTEM_STATUS = "rehab_exo/ESP32_001/system/status";
+const char* TOPIC_CONNECTION_WIFI = "rehab_exo/ESP32_001/connection/wifi";
+const char* TOPIC_CONNECTION_BLE = "rehab_exo/ESP32_001/connection/ble";
+
+// BLE Configuration
+const char* BLE_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+const char* BLE_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+const char* BLE_DEVICE_NAME = "ESP32_Servo";

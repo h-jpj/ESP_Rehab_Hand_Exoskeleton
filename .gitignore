@@ -32,6 +32,7 @@ config.h.local
 secrets.h
 credentials.json
 src/config.h
+src/config/Config.cpp
 
 # Docker data volumes (contains database data)
 mqtt-bridge/node_modules/

@@ -132,9 +132,18 @@ class RehabDashboard {
                 <tr>
                     <td class="session-id">${session.session_id}</td>
                     <td>${session.device_id}</td>
-                    <td><span class="session-type ${session.session_type}">${session.session_type}</span></td>
+                    <td>
+                        <span class="session-type ${session.session_type}">${session.session_type}</span>
+                        <br>
+                        <small class="session-status ${session.session_status}">${session.session_status}</small>
+                    </td>
                     <td>${this.formatDateTime(session.start_time)}</td>
                     <td>${this.formatDuration(session.duration_seconds)}</td>
+                    <td>
+                        ${session.total_movements || 0}
+                        ${session.successful_movements !== undefined ?
+                            `<br><small>${session.successful_movements}/${session.total_movements} successful</small>` : ''}
+                    </td>
                     <td>${session.total_cycles || 0}</td>
                     <td>
                         <button class="btn-small" onclick="dashboard.viewSessionDetails('${session.session_id}')">
@@ -201,7 +210,13 @@ class RehabDashboard {
                         <div><strong>Start Time:</strong> ${this.formatDateTime(data.session.start_time)}</div>
                         <div><strong>End Time:</strong> ${data.session.end_time ? this.formatDateTime(data.session.end_time) : 'Ongoing'}</div>
                         <div><strong>Duration:</strong> ${this.formatDuration(data.session.duration_seconds)}</div>
+                        <div><strong>Status:</strong> <span class="session-status ${data.session.session_status}">${data.session.session_status}</span></div>
+                        <div><strong>Total Movements:</strong> ${data.session.total_movements || 0}</div>
+                        <div><strong>Successful Movements:</strong> ${data.session.successful_movements || 0}</div>
+                        <div><strong>Success Rate:</strong> ${data.session.total_movements > 0 ?
+                            ((data.session.successful_movements / data.session.total_movements) * 100).toFixed(1) + '%' : 'N/A'}</div>
                         <div><strong>Total Cycles:</strong> ${data.session.total_cycles || 0}</div>
+                        ${data.session.end_reason ? `<div><strong>End Reason:</strong> ${data.session.end_reason}</div>` : ''}
                     </div>
                 </div>
 
