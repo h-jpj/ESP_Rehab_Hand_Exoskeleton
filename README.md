@@ -91,6 +91,25 @@ cd ESP32-Rehab-Hand-Exoskeleton
    - Tap "📡 Scan for ESP32"
    - Once connected, use the control buttons
 
+## 🐳 **Docker Infrastructure**
+
+This project includes a complete backend infrastructure using Docker containers for professional data logging and monitoring:
+
+- **🦟 Mosquitto MQTT Broker**: Handles real-time data communication from ESP32
+- **🗄️ MariaDB Database**: Stores therapy sessions, movement data, and system logs
+- **🌐 Web Dashboard**: Browser-based interface for data visualization and monitoring
+- **🔧 phpMyAdmin**: Database management interface for development
+
+The Docker setup provides:
+- **Real-time data logging** from ESP32 via WiFi/MQTT
+- **Professional web interface** accessible from any browser
+- **Comprehensive session tracking** and progress monitoring
+- **Scalable architecture** ready for multiple devices
+
+**📋 Quick Setup**: Deploy all services with a single `docker-compose up -d` command.
+
+**📖 Detailed Instructions**: See [Server Setup Guide](SERVER_SETUP.md) for complete installation and configuration steps.
+
 ## 🎮 Usage Instructions
 
 ### Control Modes

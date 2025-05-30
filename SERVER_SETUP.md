@@ -1,6 +1,6 @@
 # Server Setup Guide - MQTT & Database Infrastructure
 
-This guide covers setting up the backend infrastructure for WiFi data logging using Docker Compose with Mosquitto MQTT broker and MariaDB database.
+This guide covers setting up the backend infrastructure for WiFi data logging using Docker Compose with Mosquitto MQTT broker and MariaDB database. For ease of understanding for this example my user is `jay` and the password is `aes`. Please feel free to replace these with your own credentials.
 
 ## 🏗️ **Infrastructure Overview**
 
@@ -13,6 +13,7 @@ ESP32 → WiFi → MQTT Broker → Database → Web Interface
 ### Components
 - **Mosquitto MQTT Broker**: Message routing and authentication
 - **MariaDB Database**: Session and event data storage
+- **Web Dashboard**: Real-time data visualization and monitoring
 - **phpMyAdmin**: Database management interface
 - **Docker Compose**: Container orchestration
 
@@ -68,7 +69,7 @@ services:
     ports:
       - 1883:1883
       - 9001:9001
-    stdin_open: true 
+    stdin_open: true
     tty: true
     networks:
       - mqtt_network
@@ -105,6 +106,22 @@ services:
       - mariadb
     networks:
       - mqtt_network
+
+  webapp:
+    build: ./webapp
+    container_name: rehab_webapp
+    ports:
+      - 3000:3000
+    depends_on:
+      - mariadb
+    networks:
+      - mqtt_network
+    environment:
+      - DB_HOST=mariadb
+      - DB_USER=jay
+      - DB_PASS=aes
+      - DB_NAME=rehab_exoskeleton
+    restart: unless-stopped
 
 networks:
   mqtt_network:
@@ -150,7 +167,57 @@ Set permissions:
 sudo chmod 0700 config/pwfile
 ```
 
-### Step 4: Create Database Schema
+### Step 4: Create Web Application Files
+
+Copy the webapp directory from the project repository to your server:
+
+**Option A: Direct SCP (if you have the project locally)**
+```bash
+# From your local machine, copy webapp directory
+scp -r webapp/ user@your-server-ip:~/
+
+# Then SSH into server and move to correct location
+ssh user@your-server-ip
+sudo mv ~/webapp /opt/stacks/mqtt/
+sudo chown -R user:user /opt/stacks/mqtt/webapp
+```
+
+**Option B: Clone Repository on Server**
+```bash
+# SSH into your server
+ssh user@your-server-ip
+
+# Clone the repository
+git clone https://github.com/your-username/ESP_Rehab_Hand_Exoskeleton.git
+sudo cp -r ESP_Rehab_Hand_Exoskeleton/webapp /opt/stacks/mqtt/
+sudo chown -R user:user /opt/stacks/mqtt/webapp
+```
+
+**Option C: Manual File Creation (if copying files individually)**
+```bash
+# Create webapp directory structure
+sudo mkdir -p /opt/stacks/mqtt/webapp/public
+sudo chown -R user:user /opt/stacks/mqtt/webapp
+
+# Create the required files (copy content from repository):
+# - webapp/Dockerfile
+# - webapp/package.json
+# - webapp/server.js
+# - webapp/public/index.html
+# - webapp/public/style.css
+# - webapp/public/app.js
+```
+
+**Verify webapp structure:**
+```bash
+ls -la /opt/stacks/mqtt/webapp/
+# Should show: Dockerfile, package.json, server.js, public/
+
+ls -la /opt/stacks/mqtt/webapp/public/
+# Should show: app.js, index.html, style.css
+```
+
+### Step 5: Create Database Schema
 
 Create `sql_init/init_rehab_db.sql`:
 ```sql
@@ -206,8 +273,8 @@ CREATE TABLE IF NOT EXISTS system_status (
 );
 
 -- Insert initial system status
-INSERT INTO system_status (device_id, status, firmware_version) 
-VALUES ('ESP32_001', 'offline', '1.0.0') 
+INSERT INTO system_status (device_id, status, firmware_version)
+VALUES ('ESP32_001', 'offline', '1.0.0')
 ON DUPLICATE KEY UPDATE last_seen = CURRENT_TIMESTAMP;
 ```
 
@@ -258,6 +325,27 @@ SHOW TABLES;
 ### Manual Table Creation (if needed)
 If tables don't exist, run the SQL from `sql_init/init_rehab_db.sql` manually in the MariaDB prompt.
 
+### Test Web Dashboard
+```bash
+# Check if webapp is running
+curl http://localhost:3000
+
+# Check API endpoints
+curl http://localhost:3000/api/status
+curl http://localhost:3000/api/sessions
+```
+
+Open your browser and navigate to `http://your-server-ip:3000` to access the dashboard.
+
+**Expected Dashboard Features:**
+- 📊 **System Overview**: Total sessions, today's activity, device status
+- 🔌 **Device Status**: ESP32 online/offline status and health metrics
+- 📋 **Recent Sessions**: List of therapy sessions with details
+- ⚡ **Recent Events**: Real-time activity log
+- 📡 **Live Monitor**: Real-time updates when ESP32 is active
+
+**Initial State**: The dashboard will show empty data until ESP32 starts sending MQTT data.
+
 ---
 
 ## 🌐 **Access Points**
@@ -267,6 +355,7 @@ If tables don't exist, run the SQL from `sql_init/init_rehab_db.sql` manually in
 | **MQTT Broker** | `localhost:1883` | jay / aes |
 | **MQTT WebSocket** | `localhost:9001` | jay / aes |
 | **MariaDB** | `localhost:3306` | jay / aes |
+| **Web Dashboard** | `http://localhost:3000` | None (public) |
 | **phpMyAdmin** | `http://localhost:8080` | jay / aes |
 
 ---
@@ -356,6 +445,38 @@ sudo docker-compose logs mariadb
 sudo docker exec -it mariadb_mqtt mariadb -u root -paes_root_2024 -e "SHOW DATABASES;"
 ```
 
+**Web app build fails with npm ci error:**
+```bash
+# Error: npm ci requires package-lock.json
+# Solution: Update Dockerfile to use npm install instead
+
+# Edit the Dockerfile
+sudo nano webapp/Dockerfile
+
+# Change this line:
+# RUN npm ci --only=production
+# To this:
+# RUN npm install --only=production
+
+# Then rebuild
+sudo docker-compose down
+sudo docker-compose up -d
+```
+
+**Web app container won't start:**
+```bash
+# Check webapp logs
+sudo docker-compose logs webapp
+
+# Common issues:
+# 1. Database connection - ensure MariaDB is running first
+# 2. Port conflict - ensure port 3000 is available
+# 3. File permissions - ensure webapp files are readable
+
+# Check if port 3000 is in use
+sudo netstat -tlnp | grep 3000
+```
+
 ### Log Locations
 - **Mosquitto logs**: `./log/mosquitto.log`
 - **MariaDB logs**: `sudo docker-compose logs mariadb`
@@ -366,10 +487,14 @@ sudo docker exec -it mariadb_mqtt mariadb -u root -paes_root_2024 -e "SHOW DATAB
 ## 📊 **Next Steps**
 
 After successful setup:
-1. **ESP32 Integration**: Configure ESP32 to publish MQTT data
-2. **Web Interface**: Create web dashboard for data visualization
-3. **Mobile App Integration**: Add data logging to React Native app
-4. **Data Analysis**: Implement session tracking and progress monitoring
+1. ✅ **Infrastructure Complete**: MQTT broker, database, and web dashboard running
+2. 🔄 **ESP32 Integration**: Configure ESP32 firmware to publish MQTT data
+3. 🔄 **Mobile App Integration**: Add data logging to React Native app
+4. 🔄 **Data Analysis**: Implement session tracking and progress monitoring
+5. 🔄 **GraphDB Integration**: Advanced visual data interpretation (future enhancement)
+
+**Current Status**: Backend infrastructure ready to receive and display ESP32 data.
+**Next Priority**: Update ESP32 firmware to send MQTT messages to the broker.
 
 ---
 
@@ -394,4 +519,4 @@ rehab_exo/
 
 **Network Configuration:**
 - **Internal Network**: `mqtt_network` (Docker bridge)
-- **External Ports**: 1883 (MQTT), 9001 (WebSocket), 3306 (MariaDB), 8080 (phpMyAdmin)
+- **External Ports**: 1883 (MQTT), 9001 (WebSocket), 3306 (MariaDB), 3000 (Web Dashboard), 8080 (phpMyAdmin)
