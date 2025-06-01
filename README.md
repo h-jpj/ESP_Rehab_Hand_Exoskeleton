@@ -2,66 +2,30 @@
 
 **[PLEASE REMEMBER TO READ THE SERVER_SETUP](SERVER_SETUP.md)**
 
-A **professionally architected** Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Native mobile app. Designed for rehabilitation hand exoskeleton demonstrations with multiple movement patterns, power optimization, and enterprise-level code organization. This is a direct upgrade/fork from the [Stroke-Rehabilitation-Glove](https://github.com/h-jpj/Stroke-Rehabilitation-Glove).
+ESP32-based hand rehabilitation device with BLE mobile control, real-time data logging, and clinical analytics. Includes modular firmware, React Native app, and Docker infrastructure for professional therapy monitoring.
 
-## 🏗️ **Professional Modular Architecture with Advanced Analytics**
+## Features
 
-This project features a **complete modular redesign** with **comprehensive clinical analytics** that transforms a monolithic 600+ line main.cpp into a clean, maintainable, enterprise-level codebase with real-time data collection:
+- **Servo Control**: 3-servo hand exoskeleton with sequential/simultaneous movement patterns
+- **Mobile Control**: React Native app with BLE connectivity
+- **Data Logging**: Real-time MQTT publishing to MariaDB database
+- **Web Dashboard**: Browser-based monitoring with live updates
+- **Analytics**: Grafana dashboards for clinical data visualization
+- **Session Management**: Automatic tracking with manual session termination
+- **Modular Architecture**: Clean, maintainable codebase with proper error handling
 
-### **📁 Code Organization**
+## Code Structure
+
 ```
 src/
-├── main.cpp                    # ✨ Simplified main file (70 lines)
-├── config/
-│   └── Config.h               # 🔧 Centralized configuration
-├── utils/
-│   ├── Logger.h/.cpp          # 📝 Professional logging system
-│   ├── TimeManager.h/.cpp     # ⏰ NTP sync and timestamps
-│   └── ErrorHandler.h/.cpp    # 🛡️ Error handling and recovery
-├── network/
-│   ├── WiFiManager.h/.cpp     # 📶 WiFi connection management
-│   └── MQTTManager.h/.cpp     # 📡 MQTT publishing and connection
-├── bluetooth/
-│   └── BLEManager.h/.cpp      # 🔵 BLE server and command handling
-├── hardware/
-│   ├── ServoController.h/.cpp # 🦾 Servo control with FreeRTOS
-│   └── SystemMonitor.h/.cpp   # 📊 System health monitoring
-└── app/
-    ├── CommandProcessor.h/.cpp # ⚙️ Command validation and processing
-    └── DeviceManager.h/.cpp    # 🎯 Main application coordinator
+├── main.cpp                    # Main application entry point
+├── config/Config.h             # Centralized configuration
+├── utils/                      # Logging, time sync, error handling
+├── network/                    # WiFi and MQTT management
+├── bluetooth/BLEManager        # BLE server and command handling
+├── hardware/                   # Servo control and system monitoring
+└── app/                        # Command processing and device coordination
 ```
-
-### **🌟 Architecture Benefits**
-- **✅ Maintainable**: Each module has a single, clear responsibility
-- **✅ Testable**: Components can be unit tested independently
-- **✅ Scalable**: Easy to add new features without touching existing code
-- **✅ Professional**: Enterprise-level code organization and error handling
-- **✅ Robust**: Comprehensive logging, monitoring, and recovery mechanisms
-- **✅ Performance**: Real-time monitoring with FreeRTOS task management
-
-### **🔄 Before vs After**
-| **Before (Monolithic)** | **After (Modular)** |
-|-------------------------|---------------------|
-| 600+ lines in main.cpp | 70 lines in main.cpp |
-| All code in one file | 10 specialized modules |
-| Basic error handling | Comprehensive error recovery |
-| Simple logging | Multi-level logging system |
-| Manual connection management | Automatic reconnection with health monitoring |
-| Mixed responsibilities | Clear separation of concerns |
-
-### **🚀 Key Features**
-- **Servo Control**: Precise control with FreeRTOS task management and safety features
-- **Dual Connectivity**: BLE for mobile control + WiFi/MQTT for data logging
-- **Session Management**: Automatic session tracking with manual end session support
-- **Real-time Data Logging**: Complete therapy session tracking with accurate duration calculation
-- **Web Dashboard**: Professional browser-based interface with real-time updates
-- **Cycle Tracking**: Accurate movement cycle counting and progress monitoring
-- **Professional Logging**: Multi-level logging with timestamps and error tracking
-- **Robust Error Handling**: Automatic recovery and system health monitoring
-- **Command Processing**: Validation, queuing, rate limiting, and execution tracking
-- **Security**: Comprehensive credential management and secure communication
-- **Advanced Analytics**: Real-time movement tracking, performance monitoring, and clinical data collection
-- **Enhanced MQTT Publishing**: Detailed movement metrics, system performance, and therapy progress data
 
 ## Hardware Requirements
 
@@ -88,30 +52,23 @@ src/
 | All Servo Power | Vin pin |
 | All Servo Ground | GND pin |
 
-## 🖨️ **3D Printed Hand Exoskeleton**
+## 🖨️ 3D Printed Components
 
-This project uses a **modified version** of the 3D printable hand exoskeleton design from Thingiverse:
+### STL Files
+- **📁 STLs/**: Contains 3D printable files for the hand exoskeleton and ESP32 mounting base
+- **Hand Exoskeleton**: Modified version of [Thingiverse design](https://www.thingiverse.com/thing:2782111/files) with servo mount holes adjusted for miuzei ms18 servos
+- **ESP32 Base**: Custom mounting base that attaches ESP32 to a splint for wearable use
 
-**📎 Original Design**: [Thingiverse - Hand Exoskeleton](https://www.thingiverse.com/thing:2782111/files)
+### Print Settings
+- **Material**: PLA (standard), flexible filament for finger contact points (optional)
+- **Layer Height**: 0.2mm recommended
+- **Infill**: 20-30% for structural components
+- **Supports**: Required for overhangs
 
-### **🔧 Modifications Made**
-- **Servo Mount Holes**: Modified to fit **miuzei micro servo ms18** specifications
-- **Improved Fit**: Adjusted mounting points for better servo alignment
-- **Optimized Assembly**: Enhanced for easier servo installation and maintenance
-
-### **📁 STL Files**
-> **⚠️ Important Note**: We are **not currently hosting** the modified STL files.
->
-> To use this project:
-> 1. Download the original files from the [Thingiverse link](https://www.thingiverse.com/thing:2782111/files) above
-> 2. Modify the servo mount holes to fit the miuzei ms18 servo dimensions (or whatever servos you are using)
-> 3. Print using standard PLA settings (0.2mm layer height recommended)
-
-### **🔩 Hardware Requirements**
-- **3x miuzei ms18 micro servos** (9g micro servos)
-- **M2/M3 screws** for servo mounting (check original design specifications)
-- **Flexible filament** recommended for finger contact points (optional)
-- **Standard PLA** for main structure components
+### Hardware
+- 3x miuzei ms18 micro servos (9g)
+- M2/M3 screws for servo mounting
+- ESP32 development board
 
 ⚠️ **Power Note**: This wiring is suitable for short-term demo purposes only. For production use, consider external power supply for servos.
 
@@ -234,31 +191,17 @@ cd ESP32-Rehab-Hand-Exoskeleton
    - Tap "📡 Scan for ESP32"
    - Once connected, use the control buttons
 
-## 🐳 **Docker Infrastructure**
+## 🐳 Docker Infrastructure
 
-This project includes a complete backend infrastructure using Docker containers for professional data logging and monitoring:
+Complete backend infrastructure for data logging and monitoring:
 
-- **🦟 Mosquitto MQTT Broker**: Handles real-time data communication from ESP32
-- **🗄️ MariaDB Database**: Stores therapy sessions, movement data, and system logs
-- **📊 Enhanced Analytics**: Real-time movement tracking, performance monitoring, and clinical data collection
-- **🌐 Web Dashboard**: Browser-based interface for data visualization and monitoring
-- **📈 Grafana Integration**: Professional analytics dashboards for clinical data visualization
-- **🔧 phpMyAdmin**: Database management interface for development
-- **⚡ Future InfluxDB**: High-frequency sensor data storage for advanced analytics
+- **MQTT Broker**: Real-time ESP32 communication
+- **MariaDB**: Session and movement data storage
+- **Web Dashboard**: Browser-based monitoring interface
+- **Grafana**: Clinical analytics dashboards
+- **phpMyAdmin**: Database management
 
-The Docker setup provides:
-- **Real-time data logging** from ESP32 via WiFi/MQTT with synchronized timestamps
-- **Enhanced movement analytics** with individual servo tracking and performance metrics
-- **Professional web interface** accessible from any browser
-- **Grafana dashboards** for comprehensive clinical data visualization
-- **Comprehensive session tracking** and progress monitoring
-- **Scalable architecture** ready for multiple devices and advanced sensors
-
-**⏰ Time Synchronization**: The system uses Unix timestamps for accurate data correlation across devices. The ESP32 automatically synchronizes with NTP servers when WiFi connects, ensuring all logged events have precise timestamps for medical documentation and progress tracking.
-
-**📋 Quick Setup**: Deploy all services with a single `docker-compose up -d` command.
-
-**📖 Detailed Instructions**: See [Server Setup Guide](SERVER_SETUP.md) for complete installation and configuration steps.
+**Setup**: `docker-compose up -d` - See [Server Setup Guide](SERVER_SETUP.md) for details.
 
 ## 🎮 Usage Instructions
 
@@ -328,36 +271,10 @@ The Docker setup provides:
   - Check console logs for error messages
   - Try "🔄 Run Servo Test" first to verify connection
 
-## 👨‍💻 **Development Workflow**
+## 📖 Documentation
 
-The modular architecture enables efficient development and maintenance:
-
-### **Adding New Features**
-1. **Identify the appropriate module** (or create a new one)
-2. **Implement the feature** within the module's scope
-3. **Add logging and error handling** using the existing utilities
-4. **Update the DeviceManager** if coordination is needed
-5. **Test the module independently** before integration
-
-### **Debugging and Troubleshooting**
-- **Centralized Logging**: All modules use the same logging system
-- **Component Isolation**: Issues can be traced to specific modules
-- **Health Monitoring**: System automatically reports component status
-- **Performance Tracking**: Built-in metrics help identify bottlenecks
-
-### **Code Maintenance**
-- **Single Responsibility**: Each module has one clear purpose
-- **Minimal Dependencies**: Modules are loosely coupled
-- **Clear Interfaces**: Well-defined APIs between components
-- **Comprehensive Documentation**: Each module is self-documenting
-
-## 📖 Detailed Documentation
-
-- [Getting Started Guide](GETTING_STARTED.md) - Complete setup instructions
-- [Hardware Setup](HARDWARE_SETUP.md) - Wiring diagrams and connections
 - [Server Setup Guide](SERVER_SETUP.md) - MQTT broker and database infrastructure
-- [Project Structure](PROJECT_STRUCTURE.md) - Code organization and architecture
-- [Changelog](CHANGELOG.md) - Version history and updates
+- [Database Queries](DATABASE_QUERIES.md) - Complete reference for all queries and configurations
 
 ## Demo Script
 
@@ -369,49 +286,13 @@ The modular architecture enables efficient development and maintenance:
 6. **Interruption**: Show immediate response to state changes
 7. **Status**: Highlight real-time feedback system
 
-## 🔧 Technical Details
+## Technical Features
 
-### **Modular Architecture Implementation**
-- **DeviceManager**: Central coordinator managing all subsystems
-- **Component Isolation**: Each module handles its own initialization and lifecycle
-- **Clean Interfaces**: Well-defined APIs between modules
-- **Dependency Injection**: Modules communicate through callbacks and interfaces
-
-### **FreeRTOS Implementation**
-- **ServoController**: Dedicated FreeRTOS task for servo movements
-- **Task Notifications**: Immediate response to movement commands
-- **Thread-Safe Communication**: Safe inter-task communication patterns
-- **Performance Monitoring**: Real-time loop time and resource tracking
-
-### **Professional Logging System**
-- **Multi-Level Logging**: DEBUG, INFO, WARNING, ERROR levels
-- **Timestamped Entries**: Precise timing for debugging and monitoring
-- **Memory Efficient**: Configurable log levels to optimize performance
-- **System Integration**: Automatic logging of errors, state changes, and performance metrics
-
-### **Error Handling & Recovery**
-- **Comprehensive Error Tracking**: Centralized error reporting and history
-- **Automatic Recovery**: Self-healing mechanisms for common failures
-- **Health Monitoring**: Continuous system health assessment
-- **Graceful Degradation**: System continues operating even with component failures
-
-### **Network Management**
-- **WiFiManager**: Automatic connection, reconnection, and network scanning
-- **MQTTManager**: Robust MQTT publishing with retry logic and connection management
-- **BLEManager**: Professional BLE server implementation with connection callbacks
-- **Connection Resilience**: Automatic recovery from network interruptions
-
-### **Command Processing**
-- **Validation Pipeline**: Multi-stage command validation and sanitization
-- **Rate Limiting**: Protection against command flooding
-- **Queue Management**: Command queuing for busy periods
-- **Execution Tracking**: Complete audit trail of command execution
-
-### **System Monitoring**
-- **Real-time Metrics**: Memory usage, CPU performance, network status
-- **Health Assessment**: Automated system health scoring
-- **Performance Tracking**: Loop time monitoring and optimization alerts
-- **Resource Management**: Proactive memory and performance management
+- **Modular Architecture**: Clean separation of concerns with dedicated modules
+- **FreeRTOS**: Dedicated servo control task with real-time performance
+- **Error Handling**: Comprehensive logging and automatic recovery
+- **Network Management**: Robust WiFi/MQTT with automatic reconnection
+- **Command Processing**: Validation, rate limiting, and execution tracking
 
 ## Future Enhancements
 
