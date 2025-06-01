@@ -24,6 +24,22 @@ const char* TOPIC_MOVEMENT_COMMAND = "rehab_exo/ESP32_001/movement/command";
 const char* TOPIC_SYSTEM_STATUS = "rehab_exo/ESP32_001/system/status";
 const char* TOPIC_CONNECTION_WIFI = "rehab_exo/ESP32_001/connection/wifi";
 const char* TOPIC_CONNECTION_BLE = "rehab_exo/ESP32_001/connection/ble";
+const char* TOPIC_SESSION_START = "rehab_exo/ESP32_001/session/start";
+const char* TOPIC_SESSION_END = "rehab_exo/ESP32_001/session/end";
+const char* TOPIC_SESSION_PROGRESS = "rehab_exo/ESP32_001/session/progress";
+
+// Enhanced Analytics Topics
+const char* TOPIC_MOVEMENT_INDIVIDUAL = "rehab_exo/ESP32_001/movement/individual";
+const char* TOPIC_MOVEMENT_QUALITY = "rehab_exo/ESP32_001/movement/quality";
+const char* TOPIC_PERFORMANCE_TIMING = "rehab_exo/ESP32_001/performance/timing";
+const char* TOPIC_PERFORMANCE_MEMORY = "rehab_exo/ESP32_001/performance/memory";
+const char* TOPIC_CLINICAL_PROGRESS = "rehab_exo/ESP32_001/clinical/progress";
+const char* TOPIC_CLINICAL_QUALITY = "rehab_exo/ESP32_001/clinical/quality";
+
+// BLE Configuration
+const char* BLE_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
+const char* BLE_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";
+const char* BLE_DEVICE_NAME = "ESP32_Servo";
 
 // Timing Configuration
 const unsigned long WIFI_RECONNECT_INTERVAL = 30000;  // 30 seconds

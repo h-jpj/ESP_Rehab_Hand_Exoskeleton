@@ -27,6 +27,12 @@ void ServoController::initialize() {
         servoStatus[i] = {0, 0, false, 0};
     }
 
+    // Initialize analytics data
+    resetPerformanceMetrics();
+    for (int i = 0; i < SERVO_COUNT; i++) {
+        previousServoAngles[i] = minAngle; // Start with home position
+    }
+
     try {
         // Attach servos to pins
         for (int i = 0; i < SERVO_COUNT; i++) {
@@ -405,10 +411,31 @@ void ServoController::moveServoSmoothly(int servoIndex, int targetAngle, int del
         return;
     }
 
+    // Record movement start time and previous angle for analytics
+    unsigned long startTime = millis();
+    int startAngle = previousServoAngles[servoIndex];
+    individualServoStartTimes[servoIndex] = startTime;
+
     servos[servoIndex].write(targetAngle);
     updateServoStatus(servoIndex, targetAngle, true);
 
     Logger::debugf("Servo %d moving to %d degrees", servoIndex, targetAngle);
+
+    // Wait for movement to complete (simplified - actual servo movement time)
+    delay(delayMs);
+
+    // Calculate movement metrics
+    unsigned long duration = millis() - startTime;
+    int actualAngle = targetAngle; // Assume successful movement (no feedback sensor)
+    bool successful = (actualAngle == targetAngle);
+    float smoothness = calculateMovementSmoothness(servoIndex, duration);
+
+    // Record the movement metrics
+    recordMovementMetrics(servoIndex, startTime, duration, successful,
+                         startAngle, targetAngle, actualAngle, smoothness);
+
+    // Update previous angle for next movement
+    previousServoAngles[servoIndex] = targetAngle;
 }
 
 void ServoController::moveAllServosTo(int angle, int delayMs) {
@@ -500,4 +527,101 @@ void ServoController::logMovementComplete(MovementType type, int cycles) {
 
 void ServoController::logStateChange(ServoState oldState, ServoState newState) {
     Logger::infof("Servo state changed: %d -> %d", (int)oldState, (int)newState);
+}
+
+// Enhanced analytics methods implementation
+ServoController::MovementMetrics ServoController::getLastMovementMetrics() {
+    return lastMovementMetrics;
+}
+
+ServoController::ServoPerformance ServoController::getServoPerformance(int servoIndex) {
+    if (isValidServoIndex(servoIndex)) {
+        return servoPerformance[servoIndex];
+    }
+    return {}; // Return empty struct for invalid index
+}
+
+void ServoController::recordMovementMetrics(int servoIndex, unsigned long startTime, unsigned long duration,
+                                          bool successful, int startAngle, int targetAngle, int actualAngle,
+                                          float smoothness, const String& sessionId) {
+    if (!isValidServoIndex(servoIndex)) return;
+
+    // Update last movement metrics
+    lastMovementMetrics.startTime = startTime;
+    lastMovementMetrics.duration = duration;
+    lastMovementMetrics.successful = successful;
+    lastMovementMetrics.servoIndex = servoIndex;
+    lastMovementMetrics.startAngle = startAngle;
+    lastMovementMetrics.targetAngle = targetAngle;
+    lastMovementMetrics.actualAngle = actualAngle;
+    lastMovementMetrics.smoothness = smoothness;
+    lastMovementMetrics.sessionId = sessionId;
+
+    // Determine movement type
+    if (currentMovementType == MovementType::SEQUENTIAL) {
+        lastMovementMetrics.movementType = "sequential";
+    } else if (currentMovementType == MovementType::SIMULTANEOUS) {
+        lastMovementMetrics.movementType = "simultaneous";
+    } else if (currentMovementType == MovementType::HOME) {
+        lastMovementMetrics.movementType = "home";
+    } else {
+        lastMovementMetrics.movementType = "unknown";
+    }
+
+    // Update servo performance metrics
+    ServoPerformance& perf = servoPerformance[servoIndex];
+    perf.totalMovements++;
+    if (successful) {
+        perf.successfulMovements++;
+    }
+    perf.totalTime += duration;
+    perf.averageTime = perf.totalTime / perf.totalMovements;
+    perf.successRate = (float)perf.successfulMovements / perf.totalMovements * 100.0f;
+    perf.averageSmoothness = (perf.averageSmoothness * (perf.totalMovements - 1) + smoothness) / perf.totalMovements;
+    perf.lastMovementTime = startTime + duration;
+
+    Logger::debugf("Movement metrics recorded: Servo %d, Duration %lu ms, Success: %s, Smoothness: %.2f",
+                   servoIndex, duration, successful ? "Yes" : "No", smoothness);
+
+    // Publish analytics data
+    publishMovementAnalytics(lastMovementMetrics);
+}
+
+void ServoController::publishMovementAnalytics(const MovementMetrics& metrics) {
+    // Log the analytics data
+    Logger::infof("Analytics: Servo %d, Type: %s, Duration: %lu ms, Success: %s, Smoothness: %.2f",
+                  metrics.servoIndex, metrics.movementType.c_str(), metrics.duration,
+                  metrics.successful ? "Yes" : "No", metrics.smoothness);
+
+    // TODO: Publish via MQTT when MQTTManager reference is available
+    // This will be connected through DeviceManager in the next step
+}
+
+float ServoController::calculateMovementSmoothness(int servoIndex, unsigned long duration) {
+    if (!isValidServoIndex(servoIndex) || duration == 0) {
+        return 0.0f;
+    }
+
+    // Simple smoothness calculation based on movement duration
+    // Longer duration for same angle change = smoother movement
+    // This is a basic implementation - can be enhanced with actual acceleration data
+    float expectedDuration = 1000.0f; // Expected duration for smooth movement (1 second)
+    float smoothness = (duration >= expectedDuration) ? 100.0f : (duration / expectedDuration) * 100.0f;
+
+    // Cap at 100%
+    return (smoothness > 100.0f) ? 100.0f : smoothness;
+}
+
+void ServoController::resetPerformanceMetrics() {
+    // Reset all servo performance metrics
+    for (int i = 0; i < SERVO_COUNT; i++) {
+        servoPerformance[i] = {};
+        individualServoStartTimes[i] = 0;
+        previousServoAngles[i] = 0;
+    }
+
+    // Reset last movement metrics
+    lastMovementMetrics = {};
+
+    Logger::info("Performance metrics reset");
 }

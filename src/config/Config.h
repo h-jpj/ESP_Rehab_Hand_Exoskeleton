@@ -32,6 +32,14 @@ extern const char* TOPIC_SESSION_START;
 extern const char* TOPIC_SESSION_END;
 extern const char* TOPIC_SESSION_PROGRESS;
 
+// Enhanced Analytics Topics
+extern const char* TOPIC_MOVEMENT_INDIVIDUAL;
+extern const char* TOPIC_MOVEMENT_QUALITY;
+extern const char* TOPIC_PERFORMANCE_TIMING;
+extern const char* TOPIC_PERFORMANCE_MEMORY;
+extern const char* TOPIC_CLINICAL_PROGRESS;
+extern const char* TOPIC_CLINICAL_QUALITY;
+
 // Timing Configuration
 const unsigned long WIFI_RECONNECT_INTERVAL = 30000;  // 30 seconds
 const unsigned long MQTT_RECONNECT_INTERVAL = 5000;   // 5 seconds

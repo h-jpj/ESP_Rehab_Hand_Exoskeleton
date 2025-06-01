@@ -402,3 +402,137 @@ void MQTTManager::notifyConnectionChange(bool connected) {
         reconnectionCount++;
     }
 }
+
+// Enhanced analytics publishing methods implementation
+bool MQTTManager::publishMovementIndividual(int servoIndex, unsigned long startTime, unsigned long duration,
+                                           bool successful, int startAngle, int targetAngle, int actualAngle,
+                                           float smoothness, const String& movementType, const String& sessionId) {
+    if (!isConnected()) {
+        REPORT_WARNING(ErrorCode::MQTT_CONNECTION_FAILED, "Cannot publish - MQTT not connected");
+        return false;
+    }
+
+    JsonDocument doc = createBaseDocument();
+    doc["event_type"] = "movement_individual";
+
+    JsonObject data = doc["data"].to<JsonObject>();
+    data["servo_index"] = servoIndex;
+    data["start_time"] = startTime;
+    data["duration_ms"] = duration;
+    data["successful"] = successful;
+    data["start_angle"] = startAngle;
+    data["target_angle"] = targetAngle;
+    data["actual_angle"] = actualAngle;
+    data["smoothness"] = smoothness;
+    data["movement_type"] = movementType;
+    if (sessionId.length() > 0) {
+        data["session_id"] = sessionId;
+    }
+
+    bool success = publishJSON(TOPIC_MOVEMENT_INDIVIDUAL, doc);
+    if (success) {
+        Logger::debugf("Published individual movement: Servo %d, Duration %lu ms", servoIndex, duration);
+    }
+
+    return success;
+}
+
+bool MQTTManager::publishMovementQuality(const String& sessionId, float overallQuality,
+                                        float averageSmoothness, float successRate) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc = createBaseDocument();
+    doc["event_type"] = "movement_quality";
+
+    JsonObject data = doc["data"].to<JsonObject>();
+    data["session_id"] = sessionId;
+    data["overall_quality"] = overallQuality;
+    data["average_smoothness"] = averageSmoothness;
+    data["success_rate"] = successRate;
+
+    bool success = publishJSON(TOPIC_MOVEMENT_QUALITY, doc);
+    if (success) {
+        Logger::debugf("Published movement quality: Session %s, Quality %.2f", sessionId.c_str(), overallQuality);
+    }
+
+    return success;
+}
+
+bool MQTTManager::publishPerformanceTiming(unsigned long loopTime, unsigned long averageLoopTime,
+                                          unsigned long maxLoopTime) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc = createBaseDocument();
+    doc["event_type"] = "performance_timing";
+
+    JsonObject data = doc["data"].to<JsonObject>();
+    data["current_loop_time"] = loopTime;
+    data["average_loop_time"] = averageLoopTime;
+    data["max_loop_time"] = maxLoopTime;
+
+    bool success = publishJSON(TOPIC_PERFORMANCE_TIMING, doc);
+    if (success) {
+        Logger::debugf("Published performance timing: Current %lu ms, Avg %lu ms", loopTime, averageLoopTime);
+    }
+
+    return success;
+}
+
+bool MQTTManager::publishPerformanceMemory(size_t freeHeap, size_t minFreeHeap, float memoryUsagePercent) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc = createBaseDocument();
+    doc["event_type"] = "performance_memory";
+
+    JsonObject data = doc["data"].to<JsonObject>();
+    data["free_heap"] = freeHeap;
+    data["min_free_heap"] = minFreeHeap;
+    data["memory_usage_percent"] = memoryUsagePercent;
+
+    bool success = publishJSON(TOPIC_PERFORMANCE_MEMORY, doc);
+    if (success) {
+        Logger::debugf("Published memory performance: Free %zu bytes, Usage %.1f%%", freeHeap, memoryUsagePercent);
+    }
+
+    return success;
+}
+
+bool MQTTManager::publishClinicalProgress(const String& sessionId, float progressScore,
+                                         const String& progressIndicators) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc = createBaseDocument();
+    doc["event_type"] = "clinical_progress";
+
+    JsonObject data = doc["data"].to<JsonObject>();
+    data["session_id"] = sessionId;
+    data["progress_score"] = progressScore;
+    data["progress_indicators"] = progressIndicators;
+
+    bool success = publishJSON(TOPIC_CLINICAL_PROGRESS, doc);
+    if (success) {
+        Logger::debugf("Published clinical progress: Session %s, Score %.2f", sessionId.c_str(), progressScore);
+    }
+
+    return success;
+}
+
+bool MQTTManager::publishClinicalQuality(const String& sessionId, float sessionQuality,
+                                        const String& qualityMetrics) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc = createBaseDocument();
+    doc["event_type"] = "clinical_quality";
+
+    JsonObject data = doc["data"].to<JsonObject>();
+    data["session_id"] = sessionId;
+    data["session_quality"] = sessionQuality;
+    data["quality_metrics"] = qualityMetrics;
+
+    bool success = publishJSON(TOPIC_CLINICAL_QUALITY, doc);
+    if (success) {
+        Logger::debugf("Published clinical quality: Session %s, Quality %.2f", sessionId.c_str(), sessionQuality);
+    }
+
+    return success;
+}

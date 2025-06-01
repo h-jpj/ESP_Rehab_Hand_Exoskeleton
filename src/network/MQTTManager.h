@@ -42,6 +42,20 @@ public:
     bool publishSessionProgress(const String& sessionId, int completedCycles, int totalCycles,
                                float progressPercent, int movementsCompleted);
 
+    // Enhanced analytics publishing methods
+    bool publishMovementIndividual(int servoIndex, unsigned long startTime, unsigned long duration,
+                                  bool successful, int startAngle, int targetAngle, int actualAngle,
+                                  float smoothness, const String& movementType, const String& sessionId = "");
+    bool publishMovementQuality(const String& sessionId, float overallQuality,
+                               float averageSmoothness, float successRate);
+    bool publishPerformanceTiming(unsigned long loopTime, unsigned long averageLoopTime,
+                                 unsigned long maxLoopTime);
+    bool publishPerformanceMemory(size_t freeHeap, size_t minFreeHeap, float memoryUsagePercent);
+    bool publishClinicalProgress(const String& sessionId, float progressScore,
+                               const String& progressIndicators);
+    bool publishClinicalQuality(const String& sessionId, float sessionQuality,
+                              const String& qualityMetrics);
+
     // Generic publishing
     bool publish(const char* topic, const String& payload, bool retain = false);
     bool publishJSON(const char* topic, const JsonDocument& doc, bool retain = false);

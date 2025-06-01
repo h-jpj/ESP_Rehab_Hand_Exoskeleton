@@ -1,10 +1,12 @@
 # ESP32 Rehabilitation Hand Exoskeleton
 
+**[PLEASE REMEMBER TO READ THE SERVER_SETUP](SERVER_SETUP.md)**
+
 A **professionally architected** Bluetooth Low Energy (BLE) controlled servo system using ESP32 and React Native mobile app. Designed for rehabilitation hand exoskeleton demonstrations with multiple movement patterns, power optimization, and enterprise-level code organization. This is a direct upgrade/fork from the [Stroke-Rehabilitation-Glove](https://github.com/h-jpj/Stroke-Rehabilitation-Glove).
 
-## 🏗️ **Professional Modular Architecture**
+## 🏗️ **Professional Modular Architecture with Advanced Analytics**
 
-This project features a **complete modular redesign** that transforms a monolithic 600+ line main.cpp into a clean, maintainable, enterprise-level codebase:
+This project features a **complete modular redesign** with **comprehensive clinical analytics** that transforms a monolithic 600+ line main.cpp into a clean, maintainable, enterprise-level codebase with real-time data collection:
 
 ### **📁 Code Organization**
 ```
@@ -58,13 +60,23 @@ src/
 - **Robust Error Handling**: Automatic recovery and system health monitoring
 - **Command Processing**: Validation, queuing, rate limiting, and execution tracking
 - **Security**: Comprehensive credential management and secure communication
+- **Advanced Analytics**: Real-time movement tracking, performance monitoring, and clinical data collection
+- **Enhanced MQTT Publishing**: Detailed movement metrics, system performance, and therapy progress data
 
 ## Hardware Requirements
 
+### **Core Components**
 - ESP32 Development Board (ESP32-WROOM-32 or similar)
 - 3x Servo Motors (miuzei ms18 micro 9g servos or similar)
 - USB cable for power and programming
 - Jumper wires for connections
+
+### **Enhanced Analytics Sensors (Optional - Future Integration)**
+- **Pressure Sensors**: 20g~2kg High Resistance Type Thin Film Pressure Sensor for force measurement
+- **Motion Tracking**: GY-521 MPU-6050 (3-axis gyroscope + 3-axis accelerometer) for movement analysis
+- **Biometric Monitoring**: GY-MAX30102 Heart Rate Pulse Oximetry Sensor for patient monitoring
+
+*Note: Enhanced sensor integration will use InfluxDB for high-frequency data storage alongside MariaDB for session management.*
 
 ## 🔧 Wiring Diagram
 
@@ -228,14 +240,19 @@ This project includes a complete backend infrastructure using Docker containers 
 
 - **🦟 Mosquitto MQTT Broker**: Handles real-time data communication from ESP32
 - **🗄️ MariaDB Database**: Stores therapy sessions, movement data, and system logs
+- **📊 Enhanced Analytics**: Real-time movement tracking, performance monitoring, and clinical data collection
 - **🌐 Web Dashboard**: Browser-based interface for data visualization and monitoring
+- **📈 Grafana Integration**: Professional analytics dashboards for clinical data visualization
 - **🔧 phpMyAdmin**: Database management interface for development
+- **⚡ Future InfluxDB**: High-frequency sensor data storage for advanced analytics
 
 The Docker setup provides:
 - **Real-time data logging** from ESP32 via WiFi/MQTT with synchronized timestamps
+- **Enhanced movement analytics** with individual servo tracking and performance metrics
 - **Professional web interface** accessible from any browser
+- **Grafana dashboards** for comprehensive clinical data visualization
 - **Comprehensive session tracking** and progress monitoring
-- **Scalable architecture** ready for multiple devices
+- **Scalable architecture** ready for multiple devices and advanced sensors
 
 **⏰ Time Synchronization**: The system uses Unix timestamps for accurate data correlation across devices. The ESP32 automatically synchronizes with NTP servers when WiFi connects, ensuring all logged events have precise timestamps for medical documentation and progress tracking.
 

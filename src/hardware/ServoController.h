@@ -71,6 +71,40 @@ public:
     unsigned long getTotalMovementTime();
     int getMovementCount();
 
+    // Enhanced analytics structures
+    struct MovementMetrics {
+        unsigned long startTime;
+        unsigned long duration;
+        bool successful;
+        int servoIndex;
+        int startAngle;
+        int targetAngle;
+        int actualAngle;
+        float smoothness;
+        String movementType;
+        String sessionId;
+    };
+
+    struct ServoPerformance {
+        int totalMovements;
+        int successfulMovements;
+        unsigned long totalTime;
+        unsigned long averageTime;
+        float successRate;
+        float averageSmoothness;
+        unsigned long lastMovementTime;
+    };
+
+    // Enhanced analytics methods
+    MovementMetrics getLastMovementMetrics();
+    ServoPerformance getServoPerformance(int servoIndex);
+    void recordMovementMetrics(int servoIndex, unsigned long startTime, unsigned long duration,
+                              bool successful, int startAngle, int targetAngle, int actualAngle,
+                              float smoothness, const String& sessionId = "");
+    void publishMovementAnalytics(const MovementMetrics& metrics);
+    float calculateMovementSmoothness(int servoIndex, unsigned long duration);
+    void resetPerformanceMetrics();
+
 private:
     Servo servos[3];
     ServoStatus servoStatus[3];
@@ -88,6 +122,12 @@ private:
     unsigned long movementStartTime;
     unsigned long totalMovementTime;
     int movementCount;
+
+    // Enhanced analytics data
+    MovementMetrics lastMovementMetrics;
+    ServoPerformance servoPerformance[3];
+    unsigned long individualServoStartTimes[3];
+    int previousServoAngles[3];
 
     // Task management
     TaskHandle_t servoTaskHandle;
