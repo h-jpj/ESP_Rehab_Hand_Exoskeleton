@@ -41,7 +41,7 @@ pio device monitor  # Monitor serial output
 ### Mobile App
 ```bash
 # Setup mobile app
-cd ServoController
+cd servo-controller
 npm install
 npx expo run:android --variant release
 ```

@@ -55,8 +55,8 @@ src/
 ## 🖨️ 3D Printed Components
 
 ### STL Files
-- **📁 STLs/**: Contains 3D printable files for the hand exoskeleton and ESP32 mounting base
-- **Hand Exoskeleton**: Modified version of [Thingiverse design](https://www.thingiverse.com/thing:2782111/files) with servo mount holes adjusted for miuzei ms18 servos
+- **📁 STLs/**: Contains 3D printable files for the ESP32 mounting base but not the hand exoskeleton itself.
+- **Hand Exoskeleton**: This is what the design is based on [Thingiverse design](https://www.thingiverse.com/thing:2782111/files) with servo mount holes adjusted for miuzei ms18 servos however you'll have to make the modifactions yourself... I may have lost the files I altered when University switched their systems. Hard lesson learned.
 - **ESP32 Base**: Custom mounting base that attaches ESP32 to a splint for wearable use
 
 ### Print Settings
@@ -67,7 +67,7 @@ src/
 
 ### Hardware
 - 3x miuzei ms18 micro servos (9g)
-- M2/M3 screws for servo mounting
+- M3 screws for servo mounting
 - ESP32 development board
 
 ⚠️ **Power Note**: This wiring is suitable for short-term demo purposes only. For production use, consider external power supply for servos.
@@ -173,7 +173,7 @@ cd ESP32-Rehab-Hand-Exoskeleton
 
 1. **Install Dependencies**:
    ```bash
-   cd ServoController
+   cd servo-controller
    npm install
    ```
 

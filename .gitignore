@@ -6,12 +6,16 @@
 .vscode/ipch
 
 # Mobile App (React Native / Expo)
-ServoController/node_modules/
-ServoController/android/
-ServoController/.expo/
-ServoController/dist/
-ServoController/web-build/
-ServoController/package-lock.json
+servo-controller/node_modules/
+servo-controller/android/build/
+servo-controller/android/app/build/
+servo-controller/android/app/.cxx/
+servo-controller/android/.gradle/
+servo-controller/android/app/debug.keystore
+servo-controller/.expo/
+servo-controller/dist/
+servo-controller/web-build/
+servo-controller/package-lock.json
 
 # Logs
 *.log

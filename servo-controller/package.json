@@ -1,5 +1,5 @@
 {
-  "name": "servocontroller",
+  "name": "servo-controller",
   "version": "1.0.0",
   "main": "index.js",
   "scripts": {

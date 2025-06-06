@@ -12,7 +12,7 @@ ESP_Rehab_Hand_Exoskeleton/
 ├── platformio.ini              # PlatformIO configuration
 ├── src/                        # ESP32 firmware source
 │   └── main.cpp                # Main ESP32 application
-└── ServoController/            # React Native mobile app
+└── servo-controller/           # React Native mobile app
     ├── App.tsx                 # Main app component
     ├── package.json            # Node.js dependencies
     ├── app.json                # Expo configuration
@@ -31,7 +31,7 @@ ESP_Rehab_Hand_Exoskeleton/
   - Sequential and simultaneous movement patterns
   - Power-optimized servo management
 
-### Mobile App (`ServoController/App.tsx`)
+### Mobile App (`servo-controller/App.tsx`)
 - **Purpose**: React Native app for BLE control
 - **Features**:
   - BLE scanning and connection
@@ -41,8 +41,8 @@ ESP_Rehab_Hand_Exoskeleton/
 
 ### Configuration Files
 - **`platformio.ini`**: ESP32 build configuration and dependencies
-- **`ServoController/package.json`**: Mobile app dependencies
-- **`ServoController/app.json`**: Expo app configuration
+- **`servo-controller/package.json`**: Mobile app dependencies
+- **`servo-controller/app.json`**: Expo app configuration
 
 ## Dependencies
 
@@ -80,7 +80,7 @@ ESP_Rehab_Hand_Exoskeleton/
 
 2. **Mobile App Development**:
    ```bash
-   cd ServoController
+   cd servo-controller
    npm install                # Install dependencies
    npx expo run:android       # Build and run
    ```

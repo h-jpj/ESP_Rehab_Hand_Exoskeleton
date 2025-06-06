@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "ServoController",
-    "slug": "ServoController",
+    "name": "Servo Controller",
+    "slug": "servo-controller",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
