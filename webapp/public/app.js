@@ -31,6 +31,10 @@ class RehabDashboard {
             this.handleRealTimeUpdate({...data, type: 'movement_command'});
         });
 
+        this.socket.on('heart_rate', (data) => {
+            this.updateBiometricData(data);
+        });
+
         // Modal events
         const modal = document.getElementById('sessionModal');
         const closeModal = document.getElementById('closeModal');
@@ -67,8 +71,138 @@ class RehabDashboard {
                 this.loadSessions(),
                 this.loadRecentEvents()
             ]);
+            this.initializeBiometricDisplay();
         } catch (error) {
             console.error('Error loading initial data:', error);
+        }
+    }
+
+    initializeBiometricDisplay() {
+        // Initialize biometric display with default values
+        this.updateBiometricData({
+            heart_rate: 0,
+            spo2: 0,
+            signal_quality: 'no_signal',
+            finger_detected: false,
+            session_id: ''
+        });
+
+        // Update status indicators
+        document.getElementById('sensorStatus').textContent = 'Disconnected';
+        document.getElementById('sensorStatus').className = 'status-value disconnected';
+        document.getElementById('lastReading').textContent = 'Never';
+        document.getElementById('sessionActive').textContent = 'No';
+        document.getElementById('sessionActive').className = 'status-value';
+    }
+
+    updateBiometricData(data) {
+        console.log('Biometric update:', data);
+
+        // Update heart rate
+        const heartRateElement = document.getElementById('heartRate');
+        const hrQualityElement = document.getElementById('hrQuality');
+        const hrTrendElement = document.getElementById('hrTrend');
+
+        if (data.finger_detected && data.heart_rate > 0) {
+            heartRateElement.textContent = Math.round(data.heart_rate);
+            heartRateElement.parentElement.parentElement.classList.add('pulse-animation');
+        } else {
+            heartRateElement.textContent = '--';
+            heartRateElement.parentElement.parentElement.classList.remove('pulse-animation');
+        }
+
+        // Update SpO2
+        const spO2Element = document.getElementById('spO2');
+        const fingerStatusElement = document.getElementById('fingerStatus');
+        const spo2TrendElement = document.getElementById('spo2Trend');
+
+        if (data.finger_detected && data.spo2 > 0) {
+            spO2Element.textContent = Math.round(data.spo2);
+        } else {
+            spO2Element.textContent = '--';
+        }
+
+        // Update signal quality
+        hrQualityElement.textContent = data.signal_quality.replace('_', ' ');
+        hrQualityElement.className = `signal-quality ${data.signal_quality}`;
+
+        // Update finger status
+        fingerStatusElement.textContent = data.finger_detected ? 'Detected' : 'Not Detected';
+        fingerStatusElement.className = `finger-status ${data.finger_detected ? 'detected' : 'not-detected'}`;
+
+        // Update sensor status
+        const sensorStatusElement = document.getElementById('sensorStatus');
+        if (data.finger_detected || data.heart_rate > 0 || data.spo2 > 0) {
+            sensorStatusElement.textContent = 'Connected';
+            sensorStatusElement.className = 'status-value connected';
+        } else {
+            sensorStatusElement.textContent = 'No Signal';
+            sensorStatusElement.className = 'status-value disconnected';
+        }
+
+        // Update last reading time
+        document.getElementById('lastReading').textContent = new Date().toLocaleTimeString();
+
+        // Update session status
+        const sessionActiveElement = document.getElementById('sessionActive');
+        if (data.session_id && data.session_id !== '') {
+            sessionActiveElement.textContent = 'Yes';
+            sessionActiveElement.className = 'status-value active';
+        } else {
+            sessionActiveElement.textContent = 'No';
+            sessionActiveElement.className = 'status-value';
+        }
+
+        // Store previous values for trend calculation
+        if (!this.previousBiometrics) {
+            this.previousBiometrics = {};
+        }
+
+        // Calculate and display trends
+        this.updateBiometricTrends(data);
+
+        this.previousBiometrics = data;
+    }
+
+    updateBiometricTrends(currentData) {
+        if (!this.previousBiometrics) return;
+
+        // Heart rate trend
+        const hrTrendElement = document.getElementById('hrTrend').querySelector('.trend-indicator');
+        if (currentData.heart_rate > 0 && this.previousBiometrics.heart_rate > 0) {
+            const hrDiff = currentData.heart_rate - this.previousBiometrics.heart_rate;
+            if (Math.abs(hrDiff) < 2) {
+                hrTrendElement.textContent = '→ Stable';
+                hrTrendElement.className = 'trend-indicator stable';
+            } else if (hrDiff > 0) {
+                hrTrendElement.textContent = '↗ Rising';
+                hrTrendElement.className = 'trend-indicator up';
+            } else {
+                hrTrendElement.textContent = '↘ Falling';
+                hrTrendElement.className = 'trend-indicator down';
+            }
+        } else {
+            hrTrendElement.textContent = '--';
+            hrTrendElement.className = 'trend-indicator';
+        }
+
+        // SpO2 trend
+        const spo2TrendElement = document.getElementById('spo2Trend').querySelector('.trend-indicator');
+        if (currentData.spo2 > 0 && this.previousBiometrics.spo2 > 0) {
+            const spo2Diff = currentData.spo2 - this.previousBiometrics.spo2;
+            if (Math.abs(spo2Diff) < 1) {
+                spo2TrendElement.textContent = '→ Stable';
+                spo2TrendElement.className = 'trend-indicator stable';
+            } else if (spo2Diff > 0) {
+                spo2TrendElement.textContent = '↗ Rising';
+                spo2TrendElement.className = 'trend-indicator up';
+            } else {
+                spo2TrendElement.textContent = '↘ Falling';
+                spo2TrendElement.className = 'trend-indicator down';
+            }
+        } else {
+            spo2TrendElement.textContent = '--';
+            spo2TrendElement.className = 'trend-indicator';
         }
     }
 

@@ -49,6 +49,67 @@
                 </div>
             </section>
 
+            <!-- DEBUG: Test Section -->
+            <section class="dashboard-section" style="background: red; color: white; padding: 20px; margin: 20px 0;">
+                <h2>🔴 DEBUG: This section should be visible</h2>
+                <p>If you can see this red section, then the HTML is loading correctly.</p>
+            </section>
+
+            <!-- Biometric Monitor -->
+            <section class="dashboard-section" style="background: lime; color: black; padding: 20px; margin: 20px 0;">
+                <h2>🫀 Biometric Monitor (FORCED VISIBLE)</h2>
+                <div class="biometric-container">
+                    <div class="biometric-display">
+                        <div class="vital-signs">
+                            <div class="vital-card heart-rate">
+                                <div class="vital-header">
+                                    <span class="vital-icon">❤️</span>
+                                    <span class="vital-label">Heart Rate</span>
+                                    <span class="signal-quality" id="hrQuality">--</span>
+                                </div>
+                                <div class="vital-value">
+                                    <span class="vital-number" id="heartRate">--</span>
+                                    <span class="vital-unit">BPM</span>
+                                </div>
+                                <div class="vital-trend" id="hrTrend">
+                                    <span class="trend-indicator">--</span>
+                                </div>
+                            </div>
+
+                            <div class="vital-card spo2">
+                                <div class="vital-header">
+                                    <span class="vital-icon">🫁</span>
+                                    <span class="vital-label">SpO₂</span>
+                                    <span class="finger-status" id="fingerStatus">--</span>
+                                </div>
+                                <div class="vital-value">
+                                    <span class="vital-number" id="spO2">--</span>
+                                    <span class="vital-unit">%</span>
+                                </div>
+                                <div class="vital-trend" id="spo2Trend">
+                                    <span class="trend-indicator">--</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="biometric-status">
+                            <div class="status-item">
+                                <span class="status-label">Sensor Status:</span>
+                                <span class="status-value" id="sensorStatus">Disconnected</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Last Reading:</span>
+                                <span class="status-value" id="lastReading">Never</span>
+                            </div>
+                            <div class="status-item">
+                                <span class="status-label">Session Active:</span>
+                                <span class="status-value" id="sessionActive">No</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- Recent Sessions -->
             <section class="dashboard-section">
                 <h2>📋 Recent Sessions</h2>

@@ -6,9 +6,9 @@
 
 void WiFiManager::initialize() {
     if (initialized) return;
-    
+
     Logger::info("Initializing WiFi Manager...");
-    
+
     currentStatus = WiFiStatus::DISCONNECTED;
     lastReconnectAttempt = 0;
     connectionStartTime = 0;
@@ -16,17 +16,22 @@ void WiFiManager::initialize() {
     reconnectionCount = 0;
     connectionAttempts = 0;
     connectionCallback = nullptr;
-    
+    taskHandle = nullptr;
+    taskRunning = false;
+
     WiFi.mode(WIFI_STA);
     WiFi.setAutoReconnect(false);  // We'll handle reconnection manually
-    
+
     initialized = true;
-    
+
     // Start initial connection attempt
     scanNetworks();
     attemptConnection();
-    
-    Logger::info("WiFi Manager initialized");
+
+    // Start the WiFi management task
+    startTask();
+
+    Logger::info("WiFi Manager initialized with FreeRTOS task");
 }
 
 void WiFiManager::update() {
@@ -263,8 +268,89 @@ void WiFiManager::notifyConnectionChange(bool connected) {
     if (connectionCallback) {
         connectionCallback(connected);
     }
-    
+
     if (connected) {
         reconnectionCount++;
     }
+}
+
+void WiFiManager::shutdown() {
+    if (!initialized) return;
+
+    Logger::info("Shutting down WiFi Manager...");
+
+    stopTask();
+    disconnect();
+
+    initialized = false;
+    Logger::info("WiFi Manager shutdown complete");
+}
+
+// =============================================================================
+// FREERTOS TASK MANAGEMENT
+// =============================================================================
+
+void WiFiManager::startTask() {
+    if (taskRunning || taskHandle) return;
+
+    BaseType_t result = xTaskCreatePinnedToCore(
+        wifiManagerTask,
+        "WiFiManager",
+        TASK_STACK_WIFI_MANAGER,
+        this,
+        PRIORITY_WIFI_MANAGER,
+        &taskHandle,
+        CORE_PROTOCOL  // Core 0 for protocol tasks
+    );
+
+    if (result == pdPASS) {
+        taskRunning = true;
+        Logger::info("WiFi Manager task started on Core 0");
+    } else {
+        Logger::error("Failed to create WiFi Manager task");
+    }
+}
+
+void WiFiManager::stopTask() {
+    if (!taskRunning || !taskHandle) return;
+
+    taskRunning = false;
+    vTaskDelete(taskHandle);
+    taskHandle = nullptr;
+
+    Logger::info("WiFi Manager task stopped");
+}
+
+bool WiFiManager::isTaskRunning() {
+    return taskRunning && taskHandle != nullptr;
+}
+
+void WiFiManager::wifiManagerTask(void* parameter) {
+    WiFiManager* manager = (WiFiManager*)parameter;
+    Logger::info("WiFi Manager task started");
+
+    while (manager->taskRunning) {
+        // Handle connection events and status updates
+        manager->handleConnectionEvents();
+        manager->updateConnectionStatus();
+
+        // Handle reconnection logic
+        if (manager->currentStatus == WiFiStatus::DISCONNECTED ||
+            manager->currentStatus == WiFiStatus::CONNECTION_FAILED) {
+
+            unsigned long now = millis();
+            if (now - manager->lastReconnectAttempt >= WIFI_RECONNECT_INTERVAL) {
+                manager->attemptConnection();
+            }
+        }
+
+        // Feed watchdog (when FreeRTOS Manager is re-enabled)
+        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+
+        // Task runs every 1 second instead of continuous polling
+        vTaskDelay(pdMS_TO_TICKS(1000));
+    }
+
+    Logger::info("WiFi Manager task ended");
+    vTaskDelete(nullptr);  // Delete self
 }

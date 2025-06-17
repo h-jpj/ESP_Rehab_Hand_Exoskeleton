@@ -101,6 +101,11 @@ void DeviceManager::shutdown() {
     mqttManager.disconnect();
     wifiManager.disconnect();
 
+    // TODO: Re-enable when FreeRTOS Manager is active
+    // Shutdown FreeRTOS infrastructure last
+    // I2CManager::shutdown();
+    // FreeRTOSManager::shutdown();
+
     initialized = false;
     instance = nullptr;
 
@@ -127,6 +132,10 @@ MQTTManager& DeviceManager::getMQTTManager() {
     return mqttManager;
 }
 
+NetworkWatchdogManager& DeviceManager::getNetworkWatchdogManager() {
+    return networkWatchdogManager;
+}
+
 BLEManager& DeviceManager::getBLEManager() {
     return bleManager;
 }
@@ -137,6 +146,18 @@ ServoController& DeviceManager::getServoController() {
 
 SystemMonitor& DeviceManager::getSystemMonitor() {
     return systemMonitor;
+}
+
+SystemHealthManager& DeviceManager::getSystemHealthManager() {
+    return systemHealthManager;
+}
+
+SessionAnalyticsManager& DeviceManager::getSessionAnalyticsManager() {
+    return sessionAnalyticsManager;
+}
+
+PulseMonitorManager& DeviceManager::getPulseMonitorManager() {
+    return pulseMonitorManager;
 }
 
 CommandProcessor& DeviceManager::getCommandProcessor() {
@@ -234,6 +255,9 @@ void DeviceManager::publishSystemStatus() {
     if (success) {
         Logger::debug("System status published");
     }
+
+    // Publish enhanced system health data
+    publishSystemHealthData();
 }
 
 void DeviceManager::logSystemSummary() {
@@ -265,11 +289,28 @@ void DeviceManager::setStateChangeCallback(void (*callback)(DeviceState oldState
 bool DeviceManager::initializeFoundation() {
     Logger::info("Phase 1: Initializing Foundation...");
 
+    // TODO: Temporarily disable FreeRTOS Manager to fix BLE connectivity
+    // Will re-enable when implementing sensors in Phase 2
+    /*
+    // Initialize FreeRTOS infrastructure first
+    if (!FreeRTOSManager::initialize()) {
+        Logger::error("Failed to initialize FreeRTOS Manager");
+        return false;
+    }
+
+    // Initialize I2C Manager for sensor communication
+    if (!I2CManager::initialize()) {
+        Logger::error("Failed to initialize I2C Manager");
+        return false;
+    }
+    */
+
     // Initialize core utilities
     TimeManager::initialize();
     ErrorHandler::initialize();
 
     Logger::info("Foundation initialization complete");
+    // logFreeRTOSStatus();  // Disabled until FreeRTOS Manager is re-enabled
     return true;
 }
 
@@ -289,6 +330,9 @@ bool DeviceManager::initializeCommunication() {
     bleManager.setConnectionCallback(onBLEConnectionChange);
     bleManager.setCommandCallback(onBLECommandReceived);
 
+    // Initialize Network Watchdog - Temporarily disabled due to stack overflow
+    // networkWatchdogManager.initialize();
+
     Logger::info("Communication initialization complete");
     return true;
 }
@@ -304,6 +348,9 @@ bool DeviceManager::initializeHardware() {
     systemMonitor.initialize();
     systemMonitor.setAlertCallback(onSystemAlert);
     systemMonitor.setStatusReportInterval(statusReportInterval);
+
+    // Initialize system health manager
+    systemHealthManager.initialize();
 
     Logger::info("Hardware initialization complete");
     return true;
@@ -321,14 +368,28 @@ bool DeviceManager::initializeApplication() {
     sessionManager.setSessionEndCallback(onSessionEnd);
     sessionManager.setSessionStateChangeCallback(onSessionStateChange);
 
+    // Initialize session analytics manager
+    sessionAnalyticsManager.initialize();
+
+    // Initialize pulse monitor manager
+    Logger::info("About to initialize Pulse Monitor Manager...");
+    pulseMonitorManager.initialize();
+    pulseMonitorManager.setReadingCallback(onPulseReading);
+    Logger::info("Pulse Monitor Manager initialization call completed");
+
     Logger::info("Application initialization complete");
     return true;
 }
 
 void DeviceManager::updateCommunication() {
-    wifiManager.update();
-    mqttManager.update();
-    bleManager.update();
+    // WiFi Manager now runs in its own FreeRTOS task
+    // wifiManager.update();  // Removed - handled by wifiManagerTask
+
+    // MQTT Manager now runs in its own FreeRTOS tasks
+    // mqttManager.update();  // Removed - handled by mqttPublisherTask and mqttSubscriberTask
+
+    // BLE Manager now runs in its own FreeRTOS task
+    // bleManager.update();  // Removed - handled by bleServerTask
 }
 
 void DeviceManager::updateHardware() {
@@ -339,10 +400,33 @@ void DeviceManager::updateApplication() {
     // Update command processor and handle any pending commands
     // Update session manager
     sessionManager.update();
+
+    // Check for new servo analytics and publish them
+    if (servoController.hasNewAnalytics()) {
+        publishServoAnalytics();
+        servoController.clearNewAnalytics();
+    }
 }
 
 void DeviceManager::updateMonitoring() {
     systemMonitor.update();
+
+    // Record loop performance for system health monitoring
+    unsigned long currentTime = millis();
+    unsigned long currentLoopTime = currentTime - loopStartTime;
+    systemHealthManager.recordLoopTime(currentLoopTime);
+
+    // Update performance tracking
+    totalLoopTime += currentLoopTime;
+    loopCount++;
+
+    // Update next loop start time
+    loopStartTime = currentTime;
+
+    // Check for performance alerts
+    if (currentLoopTime > MAX_LOOP_TIME) {
+        Logger::warningf("Long loop time detected: %lu ms", currentLoopTime);
+    }
 }
 
 bool DeviceManager::executeMovementCommand(const Command& command) {
@@ -437,6 +521,88 @@ void DeviceManager::publishConnectionStatus() {
     if (mqttManager.isConnected()) {
         mqttManager.publishWiFiStatus(wifiManager.isConnected() ? "connected" : "disconnected");
         mqttManager.publishBLEStatus(bleManager.isConnected() ? "connected" : "advertising");
+    }
+}
+
+void DeviceManager::publishSystemHealthData() {
+    if (!mqttManager.isConnected()) return;
+
+    // Get system health metrics
+    auto healthReport = systemHealthManager.getHealthReport();
+    // auto networkMetrics = networkWatchdogManager.getNetworkMetrics(); // Disabled
+
+    // Publish system performance data
+    bool success = mqttManager.publishPerformanceTiming(
+        systemHealthManager.getAverageLoopTime(),
+        systemHealthManager.getAverageLoopTime(),
+        systemHealthManager.getMaxLoopTime()
+    );
+
+    if (success) {
+        Logger::debug("Published system performance data");
+    }
+
+    // Publish memory usage data
+    success = mqttManager.publishPerformanceMemory(
+        healthReport.memory.freeHeap,
+        healthReport.memory.minFreeHeap,
+        healthReport.memory.usagePercent
+    );
+
+    if (success) {
+        Logger::debug("Published memory usage data");
+    }
+
+    // Publish network health data if network watchdog has alerts - Disabled
+    // if (networkWatchdogManager.hasNewAlerts()) {
+    //     String alert = networkWatchdogManager.getLastAlert();
+    //     Logger::infof("Network Alert: %s", alert.c_str());
+    //     networkWatchdogManager.clearAlerts();
+    // }
+}
+
+void DeviceManager::publishServoAnalytics() {
+    if (!mqttManager.isConnected()) return;
+
+    // Get the latest movement metrics from servo controller
+    auto metrics = servoController.getLastMovementMetrics();
+
+    // Get current session ID if active
+    String sessionId = sessionManager.isSessionActive() ? sessionManager.getCurrentSessionId() : "";
+
+    // Publish individual movement data
+    bool success = mqttManager.publishMovementIndividual(
+        metrics.servoIndex,
+        metrics.startTime,
+        metrics.duration,
+        metrics.successful,
+        metrics.startAngle,
+        metrics.targetAngle,
+        metrics.actualAngle,
+        metrics.smoothness,
+        metrics.movementType,
+        sessionId
+    );
+
+    if (success) {
+        Logger::debugf("Published servo analytics: Servo %d, Duration %lu ms, Quality %.2f",
+                      metrics.servoIndex, metrics.duration, metrics.smoothness);
+
+        // Also send to session analytics manager for processing
+        sessionAnalyticsManager.processMovementData({
+            metrics.servoIndex,
+            metrics.startTime,
+            metrics.duration,
+            metrics.successful,
+            metrics.startAngle,
+            metrics.targetAngle,
+            metrics.actualAngle,
+            metrics.smoothness,
+            metrics.movementType,
+            sessionId
+        });
+    } else {
+        Logger::warning("Failed to publish servo analytics");
     }
 }
 
@@ -536,6 +702,12 @@ void DeviceManager::onSessionStart(const String& sessionId) {
     if (instance) {
         Logger::infof("Session started callback: %s", sessionId.c_str());
 
+        // Process session start in analytics manager
+        instance->sessionAnalyticsManager.processSessionStart(sessionId);
+
+        // Start pulse monitoring session
+        instance->pulseMonitorManager.startSession();
+
         // Publish session start to MQTT
         SessionManager& sm = instance->sessionManager;
         String sessionType = "";
@@ -558,6 +730,16 @@ void DeviceManager::onSessionEnd(const String& sessionId, const SessionStats& st
                      stats.duration, stats.totalMovements, stats.completedCycles,
                      stats.totalMovements > 0 ? (float)stats.successfulMovements / stats.totalMovements * 100.0f : 0.0f);
 
+        // Process session end in analytics manager
+        instance->sessionAnalyticsManager.processSessionEnd(sessionId, stats.duration);
+
+        // Generate final session analytics
+        instance->sessionAnalyticsManager.generateSessionQuality(sessionId);
+        instance->sessionAnalyticsManager.generateClinicalProgress(sessionId);
+
+        // End pulse monitoring session
+        instance->pulseMonitorManager.endSession();
+
         // Publish session end to MQTT
         String sessionType = "";
         switch (stats.detectedType) {
@@ -578,6 +760,31 @@ void DeviceManager::onSessionStateChange(SessionState oldState, SessionState new
     if (instance) {
         Logger::infof("Session state changed: %d -> %d", (int)oldState, (int)newState);
         // Future: Publish session state changes to MQTT
+    }
+}
+
+void DeviceManager::onPulseReading(const HeartRateReading& reading) {
+    if (instance && instance->mqttManager.isConnected()) {
+        // Publish all readings to show sensor status and SpO2
+        String qualityStr;
+        switch (reading.quality) {
+            case PulseQuality::GOOD: qualityStr = "good"; break;
+            case PulseQuality::FAIR: qualityStr = "fair"; break;
+            case PulseQuality::POOR: qualityStr = "poor"; break;
+            case PulseQuality::NO_SIGNAL: qualityStr = "no_signal"; break;
+            default: qualityStr = "unknown"; break;
+        }
+
+        String sessionId = instance->sessionManager.isSessionActive() ?
+                          instance->sessionManager.getCurrentSessionId() : "";
+
+        instance->mqttManager.publishHeartRate(
+            reading.heartRate,
+            reading.spO2,
+            qualityStr,
+            reading.fingerDetected, // Use actual finger detection
+            sessionId
+        );
     }
 }
 
@@ -613,11 +820,62 @@ void DeviceManager::handleSystemError() {
 
 void DeviceManager::logComponentStatus() {
     Logger::info("=== Component Status ===");
-    Logger::infof("WiFi Manager: %s", wifiManager.isConnected() ? "Connected" : "Disconnected");
-    Logger::infof("MQTT Manager: %s", mqttManager.isConnected() ? "Connected" : "Disconnected");
-    Logger::infof("BLE Manager: %s", bleManager.isConnected() ? "Connected" : "Advertising");
+    Logger::info("FreeRTOS Manager: Temporarily disabled");
+    Logger::info("I2C Manager: Temporarily disabled");
+    Logger::infof("WiFi Manager: %s (Task: %s)",
+                 wifiManager.isConnected() ? "Connected" : "Disconnected",
+                 wifiManager.isTaskRunning() ? "Running" : "Stopped");
+    Logger::infof("MQTT Manager: %s (Tasks: %s)",
+                 mqttManager.isConnected() ? "Connected" : "Disconnected",
+                 mqttManager.areTasksRunning() ? "Running" : "Stopped");
+    // Logger::infof("Network Watchdog Manager: %s (Task: %s)",
+    //              networkWatchdogManager.isNetworkHealthy() ? "Healthy" : "Warning",
+    //              networkWatchdogManager.isTaskRunning() ? "Running" : "Stopped");
+    Logger::infof("BLE Manager: %s (Task: %s)",
+                 bleManager.isConnected() ? "Connected" : "Advertising",
+                 bleManager.isTaskRunning() ? "Running" : "Stopped");
     Logger::infof("Servo Controller: %s", servoController.isBusy() ? "Busy" : "Ready");
     Logger::infof("System Monitor: %s", systemMonitor.isSystemHealthy() ? "Healthy" : "Warning");
+    Logger::infof("System Health Manager: %s (Task: %s)",
+                 systemHealthManager.isSystemHealthy() ? "Healthy" : "Warning",
+                 systemHealthManager.isTaskRunning() ? "Running" : "Stopped");
+    Logger::infof("Session Analytics Manager: %s (Task: %s)",
+                 "Ready",
+                 sessionAnalyticsManager.isTaskRunning() ? "Running" : "Stopped");
+    Logger::infof("Pulse Monitor Manager: %s (Task: %s)",
+                 pulseMonitorManager.isSensorConnected() ? "Connected" : "Disconnected",
+                 pulseMonitorManager.isTaskRunning() ? "Running" : "Stopped");
     Logger::infof("Session Manager: %s", sessionManager.isSessionActive() ? "Active Session" : "Idle");
     Logger::info("========================");
+}
+
+// Static FreeRTOS status methods
+bool DeviceManager::isFreeRTOSReady() {
+    // TODO: Re-enable when FreeRTOS Manager is active
+    // return FreeRTOSManager::isInitialized() && I2CManager::isInitialized();
+    return false;  // Temporarily disabled
+}
+
+void DeviceManager::logFreeRTOSStatus() {
+    Logger::info("=== FreeRTOS System Status ===");
+    Logger::info("FreeRTOS Manager: Temporarily disabled to fix BLE connectivity");
+    Logger::info("Will be re-enabled in Phase 2 sensor implementation");
+    Logger::infof("Free Heap: %u bytes", ESP.getFreeHeap());
+    Logger::infof("Min Free Heap: %u bytes", ESP.getMinFreeHeap());
+    Logger::infof("Task Count: %u", uxTaskGetNumberOfTasks());
+    Logger::info("=============================");
+
+    /*
+    // TODO: Re-enable when FreeRTOS Manager is active
+    Logger::infof("FreeRTOS Manager: %s", FreeRTOSManager::isInitialized() ? "Ready" : "Not Ready");
+    Logger::infof("I2C Manager: %s", I2CManager::isInitialized() ? "Ready" : "Not Ready");
+    Logger::infof("I2C Bus Health: %s", I2CManager::isBusHealthy() ? "Healthy" : "Issues Detected");
+    Logger::infof("I2C Devices Found: %d", I2CManager::isInitialized() ? "Available" : "N/A");
+    Logger::infof("Free Heap: %u bytes", FreeRTOSManager::getAvailableHeap());
+    Logger::infof("Min Free Heap: %u bytes", FreeRTOSManager::getMinimumFreeHeap());
+
+    if (FreeRTOSManager::isInitialized()) {
+        FreeRTOSManager::logSystemPerformance();
+    }
+    */
 }

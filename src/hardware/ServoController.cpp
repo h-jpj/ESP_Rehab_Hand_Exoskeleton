@@ -21,6 +21,7 @@ void ServoController::initialize() {
     movementCount = 0;
     movementCompleteCallback = nullptr;
     stateChangeCallback = nullptr;
+    hasNewMetrics = false;
 
     // Initialize servo status
     for (int i = 0; i < SERVO_COUNT; i++) {
@@ -51,14 +52,15 @@ void ServoController::initialize() {
             Logger::infof("Servo %d attached to pin %d (channel %d)", i, SERVO_PINS[i], channel);
         }
 
-        // Create servo task
-        xTaskCreate(
+        // Create servo task on Application CPU (Core 1) with high priority
+        xTaskCreatePinnedToCore(
             servoTask,
             "ServoTask",
             TASK_STACK_SIZE,
             this,
             TASK_PRIORITY,
-            &servoTaskHandle
+            &servoTaskHandle,
+            1  // Pin to Core 1 for real-time control
         );
 
         if (servoTaskHandle == nullptr) {
@@ -593,8 +595,10 @@ void ServoController::publishMovementAnalytics(const MovementMetrics& metrics) {
                   metrics.servoIndex, metrics.movementType.c_str(), metrics.duration,
                   metrics.successful ? "Yes" : "No", metrics.smoothness);
 
-    // TODO: Publish via MQTT when MQTTManager reference is available
-    // This will be connected through DeviceManager in the next step
+    // Store metrics for DeviceManager to publish
+    // DeviceManager will call getLastMovementMetrics() to get this data
+    lastMovementMetrics = metrics;
+    hasNewMetrics = true;
 }
 
 float ServoController::calculateMovementSmoothness(int servoIndex, unsigned long duration) {
@@ -622,6 +626,15 @@ void ServoController::resetPerformanceMetrics() {
 
     // Reset last movement metrics
     lastMovementMetrics = {};
+    hasNewMetrics = false;
 
     Logger::info("Performance metrics reset");
+}
+
+bool ServoController::hasNewAnalytics() {
+    return hasNewMetrics;
+}
+
+void ServoController::clearNewAnalytics() {
+    hasNewMetrics = false;
 }

@@ -18,6 +18,8 @@ void BLEManager::initialize() {
     lastCommandTime = 0;
     connectionCallback = nullptr;
     commandCallback = nullptr;
+    taskHandle = nullptr;
+    taskRunning = false;
 
     try {
         // Initialize NimBLE
@@ -54,7 +56,10 @@ void BLEManager::initialize() {
 
         startAdvertising();
 
-        Logger::info("BLE Manager initialized successfully");
+        // Start the BLE management task
+        startTask();
+
+        Logger::info("BLE Manager initialized successfully with FreeRTOS task");
 
     } catch (const std::exception& e) {
         Logger::errorf("BLE initialization failed: %s", e.what());
@@ -79,6 +84,7 @@ void BLEManager::shutdown() {
 
     Logger::info("Shutting down BLE Manager...");
 
+    stopTask();
     stopAdvertising();
 
     if (pServer) {
@@ -286,4 +292,67 @@ void BLEManager::CharacteristicCallbacks::onWrite(BLECharacteristic* pCharacteri
     if (value.length() > 0) {
         bleManager->processIncomingCommand(value);
     }
+}
+
+// =============================================================================
+// FREERTOS TASK MANAGEMENT
+// =============================================================================
+
+void BLEManager::startTask() {
+    if (taskRunning || taskHandle) return;
+
+    BaseType_t result = xTaskCreatePinnedToCore(
+        bleServerTask,
+        "BLEServer",
+        TASK_STACK_BLE_SERVER,
+        this,
+        PRIORITY_BLE_SERVER,
+        &taskHandle,
+        CORE_PROTOCOL  // Core 0 for protocol tasks
+    );
+
+    if (result == pdPASS) {
+        taskRunning = true;
+        Logger::info("BLE Server task started on Core 0");
+    } else {
+        Logger::error("Failed to create BLE Server task");
+    }
+}
+
+void BLEManager::stopTask() {
+    if (!taskRunning || !taskHandle) return;
+
+    taskRunning = false;
+    vTaskDelete(taskHandle);
+    taskHandle = nullptr;
+
+    Logger::info("BLE Server task stopped");
+}
+
+bool BLEManager::isTaskRunning() {
+    return taskRunning && taskHandle != nullptr;
+}
+
+void BLEManager::bleServerTask(void* parameter) {
+    BLEManager* manager = (BLEManager*)parameter;
+    Logger::info("BLE Server task started");
+
+    while (manager->taskRunning) {
+        // Handle connection events and status updates
+        manager->handleConnectionEvents();
+
+        // Handle advertising restart if needed
+        if (!manager->deviceConnected && manager->currentStatus != BLEStatus::ADVERTISING) {
+            manager->startAdvertising();
+        }
+
+        // Feed watchdog (when FreeRTOS Manager is re-enabled)
+        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+
+        // Task runs every 100ms for connection management
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    Logger::info("BLE Server task ended");
+    vTaskDelete(nullptr);  // Delete self
 }

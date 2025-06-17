@@ -1,5 +1,59 @@
 # Changelog
 
+## [2.1.0] - 2025-06-17
+
+### 🩺 Biometric Monitoring Integration
+
+#### Heart Rate Sensor Implementation
+- **GY-MAX30102 Integration**: Real-time heart rate and SpO2 monitoring
+- **I2C Communication**: Dedicated I2C task for sensor management
+- **Signal Processing**:
+  - Finger detection with IR threshold > 50,000
+  - Real-time SpO2 calculation using R-value algorithm
+  - Signal quality assessment and validation
+- **FreeRTOS Task**: Dedicated Heart Rate task (Core 1, Priority 3)
+- **Pin Configuration**:
+  - SCL: GPIO 21
+  - SDA: GPIO 18
+  - INT: GPIO 4
+  - VCC: 3.3V, GND: GND
+
+#### Real-time Data Pipeline
+- **MQTT Publishing**: Heart rate data published to `rehab_exo/ESP32_001/sensors/heart_rate`
+- **WebSocket Integration**: Real-time biometric data streaming to web dashboard
+- **Database Storage**: Biometric data stored in MariaDB with session correlation
+- **Hospital-style Display**: Professional medical data formatting in web interface
+
+#### Web Dashboard Enhancement
+- **Biometric Display**: Real-time heart rate and SpO2 monitoring
+- **Signal Quality Indicators**: Visual feedback for sensor status
+- **Finger Detection**: Live finger presence indication
+- **Trend Analysis**: Real-time biometric trend calculations
+- **Session Integration**: Biometric data correlated with therapy sessions
+
+#### System Architecture Updates
+- **8-Task FreeRTOS System**: Added Heart Rate task to existing 7-task architecture
+- **Dual-Core Distribution**: Heart Rate task runs on Core 1 with other application tasks
+- **Memory Allocation**: Updated to 18KB stack on Core 1 (72KB total RAM)
+- **Error Handling**: Comprehensive I2C error recovery and sensor validation
+
+#### Documentation Updates
+- **README.md**: Updated with biometric monitoring features and architecture
+- **HARDWARE_SETUP.md**: Added GY-MAX30102 wiring and setup instructions
+- **GETTING_STARTED.md**: Updated with heart rate sensor testing procedures
+- **PROJECT_STRUCTURE.md**: Reflected current clean project structure
+
+#### Technical Improvements
+- **Real-time Processing**: Sub-second biometric data updates
+- **Data Validation**: Automatic signal quality assessment
+- **Session Analytics**: Biometric data integration with rehabilitation sessions
+- **Professional Display**: Hospital-grade data presentation standards
+
+### 🧹 Project Cleanup
+- **Removed Development Artifacts**: Cleaned up 22 temporary files including phase implementations, test files, and outdated documentation
+- **Streamlined Structure**: Organized project for professional presentation
+- **Updated Documentation**: Comprehensive documentation reflecting current implementation
+
 ## [1.0.0] - 2024-12-19
 
 ### 🎉 Initial Release
@@ -103,6 +157,9 @@
 - [ ] Position feedback sensors
 - [ ] Force control algorithms
 - [ ] Multi-device support
-- [ ] Data logging capabilities
+- [x] ~~Data logging capabilities~~ (✅ Completed - MQTT + MariaDB)
+- [x] ~~Real-time biometric monitoring~~ (✅ Completed - GY-MAX30102)
+- [x] ~~Web dashboard~~ (✅ Completed - Real-time webapp)
+- [ ] Additional sensors (pressure, accelerometer)
 - [ ] Safety interlock system
 - [ ] Medical-grade compliance features

@@ -3,6 +3,7 @@
 
 #include <Arduino.h>
 #include <ESP32Servo.h>
+#include "../config/Config.h"
 
 enum class ServoState {
     IDLE = 0,
@@ -105,6 +106,10 @@ public:
     float calculateMovementSmoothness(int servoIndex, unsigned long duration);
     void resetPerformanceMetrics();
 
+    // Check for new analytics data
+    bool hasNewAnalytics();
+    void clearNewAnalytics();
+
 private:
     Servo servos[3];
     ServoStatus servoStatus[3];
@@ -128,6 +133,7 @@ private:
     ServoPerformance servoPerformance[3];
     unsigned long individualServoStartTimes[3];
     int previousServoAngles[3];
+    bool hasNewMetrics;
 
     // Task management
     TaskHandle_t servoTaskHandle;
@@ -164,8 +170,10 @@ private:
     static const int DEFAULT_MAX_ANGLE = 90;
     static const int DEFAULT_MOVEMENT_DELAY = 1000;
     static const int DEFAULT_CYCLES = 3;
-    static const int TASK_STACK_SIZE = 4096;
-    static const int TASK_PRIORITY = 1;
+
+    // Use hardcoded values for now (FreeRTOS config temporarily disabled)
+    static const uint32_t TASK_STACK_SIZE = 4096;
+    static const UBaseType_t TASK_PRIORITY = 6;  // High priority for servo control
 };
 
 #endif

@@ -15,17 +15,27 @@ This guide will get you up and running with the ESP32 servo controller in under 
 ### Hardware Requirements
 - ESP32 development board
 - 3x servo motors (SG90 or similar)
+- GY-MAX30102 Heart Rate Pulse Oximetry Sensor
 - USB cable
 - Jumper wires
 
 ## Step 1: Hardware Setup (5 minutes)
 
-1. **Wire the servos** according to the diagram in `HARDWARE_SETUP.md`:
-   - Servo 1 signal → GPIO 18
-   - Servo 2 signal → GPIO 19
-   - Servo 3 signal → GPIO 21
+1. **Wire the components** according to the diagram in `HARDWARE_SETUP.md`:
+
+   **Servos:**
+   - Servo 1 signal → GPIO 19
+   - Servo 2 signal → GPIO 22
+   - Servo 3 signal → GPIO 23
    - All servo power → Vin
    - All servo ground → GND
+
+   **Heart Rate Sensor (GY-MAX30102):**
+   - SCL → GPIO 21
+   - SDA → GPIO 18
+   - INT → GPIO 4
+   - VCC → 3.3V
+   - GND → GND
 
 2. **Connect ESP32** to your computer via USB
 
@@ -54,10 +64,43 @@ pio device monitor
 ```
 Expected output:
 ```
-=== ESP32 Servo Controller Starting ===
-Initializing servos...
-BLE advertising started
-=== Setup Complete ===
+=== ESP32 Rehabilitation Hand Exoskeleton ===
+Firmware Version: 2.0.0 (FreeRTOS Edition)
+Device ID: ESP32_001
+Starting FreeRTOS system initialization...
+
+Phase 1: Initializing Foundation...
+Logger initialized
+TimeManager initialized
+ErrorHandler initialized
+Foundation initialization complete
+
+Phase 2: Initializing Communication...
+WiFi Manager task started on Core 0
+MQTT Publisher and Subscriber tasks started on Core 0
+BLE Server task started on Core 0
+Network Watchdog task started on Core 0
+Communication initialization complete
+
+Phase 3: Initializing Hardware...
+Servo Control task started on Core 1
+I2C Manager task started on Core 1
+Heart rate sensor detected at address 0x57
+Hardware initialization complete
+
+Phase 4: Initializing Application...
+System Health task started on Core 1
+Session Analytics task started on Core 1
+Heart Rate task started on Core 1
+Application initialization complete
+
+=== FreeRTOS System Ready ===
+Architecture: Dual-core multitasking (8 active tasks)
+Core 0: WiFi, MQTT, BLE, Network Watchdog
+Core 1: Servo Control, I2C, Health, Analytics, Heart Rate
+Available interfaces: BLE, WiFi/MQTT
+Real-time analytics: ENABLED
+Biometric monitoring: ENABLED
 ```
 
 ### Test 2: Mobile App Connection
@@ -74,6 +117,7 @@ BLE advertising started
 3. **Test "📋 Sequential Movement"**: Servos move one at a time
 4. **Test "⚡ Simultaneous Movement"**: All servos move together
 5. **Test "⏹️ Stop All Servos"**: Return to idle position
+6. **Test Biometric Monitoring**: Place finger on heart rate sensor and check web dashboard at `http://your-server-ip:3000`
 
 ## Understanding the Control Modes
 
@@ -113,6 +157,12 @@ BLE advertising started
 - Check wiring connections
 - Verify power supply (USB may be insufficient)
 - Check serial monitor for error messages
+
+#### Heart rate sensor not working
+- Verify I2C connections (SCL: GPIO 21, SDA: GPIO 18)
+- Check for "Heart rate sensor detected at address 0x57" in serial monitor
+- Ensure sensor is powered with 3.3V (not 5V)
+- Place finger firmly on sensor surface
 
 #### ESP32 keeps resetting
 - Power supply insufficient
@@ -175,10 +225,13 @@ ESP_Rehab_Hand_Exoskeleton/
 
 ### ESP32 Firmware
 - ✅ BLE server with custom service
-- ✅ FreeRTOS task management
+- ✅ FreeRTOS task management (8 tasks across dual cores)
 - ✅ Power-optimized servo control
 - ✅ Interruptible movement sequences
 - ✅ Real-time status feedback
+- ✅ Heart rate and SpO2 monitoring
+- ✅ I2C sensor communication
+- ✅ Real-time biometric data publishing
 
 ### Mobile App
 - ✅ BLE device scanning and connection
@@ -243,10 +296,13 @@ Total demo time: ~10 minutes
 
 Your setup is successful when:
 - ✅ ESP32 boots and advertises BLE service
+- ✅ Heart rate sensor is detected at I2C address 0x57
 - ✅ Mobile app can discover and connect to ESP32
 - ✅ All three states work correctly
 - ✅ Servos move smoothly without binding
 - ✅ Commands are acknowledged in real-time
 - ✅ System can be interrupted and state changed
+- ✅ Heart rate data appears in web dashboard when finger is placed on sensor
+- ✅ Biometric data updates in real-time (every 2-3 seconds)
 
 Congratulations! You now have a working ESP32 servo controller for rehabilitation hand exoskeleton demonstrations.

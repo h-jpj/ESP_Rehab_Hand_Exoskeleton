@@ -422,4 +422,214 @@ tr:hover {
     th, td {
         padding: 8px;
     }
+
+    /* Biometric responsive design */
+    .vital-signs {
+        grid-template-columns: 1fr;
+        gap: 15px;
+    }
+
+    .vital-number {
+        font-size: 36px;
+    }
+
+    .biometric-status {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+}
+
+/* Biometric Monitor Styles */
+.biometric-container {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 3px solid #22c55e; /* Bright green border for visibility */
+    margin: 20px 0;
+}
+
+.biometric-display {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.vital-signs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 20px;
+}
+
+.vital-card {
+    background: linear-gradient(145deg, #0f3460 0%, #16213e 100%);
+    border-radius: 12px;
+    padding: 20px;
+    border: 1px solid #1e3a8a;
+    position: relative;
+    overflow: hidden;
+}
+
+.vital-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #ef4444, #f97316, #eab308, #22c55e);
+}
+
+.vital-card.heart-rate::before {
+    background: linear-gradient(90deg, #dc2626, #ef4444, #f87171);
+}
+
+.vital-card.spo2::before {
+    background: linear-gradient(90deg, #1d4ed8, #3b82f6, #60a5fa);
+}
+
+.vital-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 15px;
+}
+
+.vital-icon {
+    font-size: 24px;
+    margin-right: 10px;
+}
+
+.vital-label {
+    font-size: 16px;
+    font-weight: 600;
+    color: #e2e8f0;
+    flex-grow: 1;
+}
+
+.signal-quality, .finger-status {
+    font-size: 12px;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-weight: 500;
+    text-transform: uppercase;
+}
+
+.signal-quality.excellent, .finger-status.detected {
+    background: #22c55e;
+    color: #ffffff;
+}
+
+.signal-quality.good {
+    background: #eab308;
+    color: #000000;
+}
+
+.signal-quality.fair {
+    background: #f97316;
+    color: #ffffff;
+}
+
+.signal-quality.poor, .finger-status.not-detected {
+    background: #ef4444;
+    color: #ffffff;
+}
+
+.signal-quality.no-signal {
+    background: #6b7280;
+    color: #ffffff;
+}
+
+.vital-value {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.vital-number {
+    font-size: 48px;
+    font-weight: 700;
+    color: #ffffff;
+    font-family: 'Courier New', monospace;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.vital-unit {
+    font-size: 18px;
+    font-weight: 500;
+    color: #94a3b8;
+    margin-left: 5px;
+}
+
+.vital-trend {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.trend-indicator {
+    font-size: 14px;
+    color: #94a3b8;
+}
+
+.trend-indicator.up {
+    color: #22c55e;
+}
+
+.trend-indicator.down {
+    color: #ef4444;
+}
+
+.trend-indicator.stable {
+    color: #eab308;
+}
+
+.biometric-status {
+    background: rgba(15, 52, 96, 0.5);
+    border-radius: 8px;
+    padding: 15px;
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+}
+
+.status-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.status-label {
+    font-size: 14px;
+    color: #94a3b8;
+    font-weight: 500;
+}
+
+.status-value {
+    font-size: 14px;
+    color: #e2e8f0;
+    font-weight: 600;
+}
+
+.status-value.connected {
+    color: #22c55e;
+}
+
+.status-value.disconnected {
+    color: #ef4444;
+}
+
+.status-value.active {
+    color: #22c55e;
+}
+
+/* Pulse animation for heart rate */
+.vital-card.heart-rate .vital-number {
+    animation: pulse 1s ease-in-out infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
 }

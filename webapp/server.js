@@ -232,6 +232,68 @@ app.get('/api/stats', async (req, res) => {
 io.on('connection', (socket) => {
   console.log('Client connected for real-time updates');
 
+  // Handle heart rate data from MQTT bridge
+  socket.on('heart_rate', (data) => {
+    console.log('📡 Received heart rate data via WebSocket:', data);
+    // Broadcast to all connected clients
+    io.emit('heart_rate', data);
+  });
+
+  // Handle system status updates from MQTT bridge
+  socket.on('system_status', (data) => {
+    console.log('📡 Received system status via WebSocket:', data);
+    io.emit('system_status', data);
+  });
+
+  // Handle session events from MQTT bridge
+  socket.on('session_start', (data) => {
+    console.log('📡 Received session start via WebSocket:', data);
+    io.emit('session_start', data);
+  });
+
+  socket.on('session_end', (data) => {
+    console.log('📡 Received session end via WebSocket:', data);
+    io.emit('session_end', data);
+  });
+
+  socket.on('session_progress', (data) => {
+    console.log('📡 Received session progress via WebSocket:', data);
+    io.emit('session_progress', data);
+  });
+
+  // Handle movement events from MQTT bridge
+  socket.on('movement_command', (data) => {
+    console.log('📡 Received movement command via WebSocket:', data);
+    io.emit('movement_command', data);
+  });
+
+  socket.on('movement_individual', (data) => {
+    console.log('📡 Received individual movement via WebSocket:', data);
+    io.emit('movement_individual', data);
+  });
+
+  socket.on('movement_quality', (data) => {
+    console.log('📡 Received movement quality via WebSocket:', data);
+    io.emit('movement_quality', data);
+  });
+
+  // Handle clinical events from MQTT bridge
+  socket.on('clinical_progress', (data) => {
+    console.log('📡 Received clinical progress via WebSocket:', data);
+    io.emit('clinical_progress', data);
+  });
+
+  socket.on('clinical_quality', (data) => {
+    console.log('📡 Received clinical quality via WebSocket:', data);
+    io.emit('clinical_quality', data);
+  });
+
+  // Handle pulse metrics from MQTT bridge
+  socket.on('pulse_metrics', (data) => {
+    console.log('📡 Received pulse metrics via WebSocket:', data);
+    io.emit('pulse_metrics', data);
+  });
+
   socket.on('disconnect', () => {
     console.log('Client disconnected');
   });

@@ -28,7 +28,17 @@ const TOPICS = [
     'rehab_exo/ESP32_001/connection/ble',
     'rehab_exo/ESP32_001/session/start',
     'rehab_exo/ESP32_001/session/end',
-    'rehab_exo/ESP32_001/session/progress'
+    'rehab_exo/ESP32_001/session/progress',
+    // Enhanced Analytics Topics
+    'rehab_exo/ESP32_001/movement/individual',
+    'rehab_exo/ESP32_001/movement/quality',
+    'rehab_exo/ESP32_001/performance/timing',
+    'rehab_exo/ESP32_001/performance/memory',
+    'rehab_exo/ESP32_001/clinical/progress',
+    'rehab_exo/ESP32_001/clinical/quality',
+    // Biometric Topics
+    'rehab_exo/ESP32_001/sensors/heart_rate',
+    'rehab_exo/pulse_metrics'
 ];
 
 let dbPool;
@@ -137,6 +147,22 @@ async function processMessage(topic, data) {
         await handleSessionEnd(data);
     } else if (event_type === 'session_progress') {
         await handleSessionProgress(data);
+    } else if (event_type === 'movement_individual') {
+        await handleMovementIndividual(data);
+    } else if (event_type === 'movement_quality') {
+        await handleMovementQuality(data);
+    } else if (event_type === 'performance_timing') {
+        await handlePerformanceTiming(data);
+    } else if (event_type === 'performance_memory') {
+        await handlePerformanceMemory(data);
+    } else if (event_type === 'clinical_progress') {
+        await handleClinicalProgress(data);
+    } else if (event_type === 'clinical_quality') {
+        await handleClinicalQuality(data);
+    } else if (topic.includes('sensors/heart_rate')) {
+        await handleHeartRate(data);
+    } else if (topic.includes('pulse_metrics')) {
+        await handlePulseMetrics(data);
     } else {
         console.log(`ℹ️  Unhandled event type: ${event_type}`);
     }
@@ -376,6 +402,262 @@ async function handleSessionProgress(data) {
 
     } catch (error) {
         console.error('❌ Error storing session progress:', error);
+    }
+}
+
+// Handle individual movement events
+async function handleMovementIndividual(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const {
+            servo_index, start_time, duration_ms, successful,
+            start_angle, target_angle, actual_angle, smoothness,
+            movement_type, session_id
+        } = eventData;
+
+        // Insert into events table with enhanced movement data
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, command,
+                response_time_ms, servo_data, movement_successful, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, ?, ?, ?, NOW())
+        `, [
+            session_id || null,
+            timestamp,
+            'movement_individual',
+            `servo_${servo_index}`,
+            duration_ms,
+            JSON.stringify({
+                servo_index, start_time, start_angle, target_angle,
+                actual_angle, smoothness, movement_type
+            }),
+            successful
+        ]);
+
+        console.log(`✅ Stored individual movement: Servo ${servo_index}, Duration ${duration_ms}ms`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('movement_individual', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing individual movement:', error);
+    }
+}
+
+// Handle movement quality events
+async function handleMovementQuality(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const { session_id, overall_quality, average_smoothness, success_rate } = eventData;
+
+        // Insert into events table
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id || null,
+            timestamp,
+            'movement_quality',
+            JSON.stringify({ overall_quality, average_smoothness, success_rate })
+        ]);
+
+        console.log(`✅ Stored movement quality: Session ${session_id}, Quality ${overall_quality}`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('movement_quality', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing movement quality:', error);
+    }
+}
+
+// Handle performance timing events
+async function handlePerformanceTiming(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const { loop_time, average_loop_time, max_loop_time } = eventData;
+
+        // Insert into events table
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            null, // Performance events are not session-specific
+            timestamp,
+            'performance_timing',
+            JSON.stringify({ loop_time, average_loop_time, max_loop_time })
+        ]);
+
+        console.log(`✅ Stored performance timing: Loop ${loop_time}ms, Avg ${average_loop_time}ms`);
+
+    } catch (error) {
+        console.error('❌ Error storing performance timing:', error);
+    }
+}
+
+// Handle performance memory events
+async function handlePerformanceMemory(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const { free_heap, min_free_heap, memory_usage_percent } = eventData;
+
+        // Insert into events table
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            null, // Performance events are not session-specific
+            timestamp,
+            'performance_memory',
+            JSON.stringify({ free_heap, min_free_heap, memory_usage_percent })
+        ]);
+
+        console.log(`✅ Stored performance memory: Free ${free_heap} bytes, Usage ${memory_usage_percent}%`);
+
+    } catch (error) {
+        console.error('❌ Error storing performance memory:', error);
+    }
+}
+
+// Handle clinical progress events
+async function handleClinicalProgress(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const { session_id, progress_score, progress_indicators } = eventData;
+
+        // Insert into events table
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id || null,
+            timestamp,
+            'clinical_progress',
+            JSON.stringify({ progress_score, progress_indicators })
+        ]);
+
+        console.log(`✅ Stored clinical progress: Session ${session_id}, Score ${progress_score}`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('clinical_progress', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing clinical progress:', error);
+    }
+}
+
+// Handle clinical quality events
+async function handleClinicalQuality(data) {
+    try {
+        const { device_id, timestamp, data: eventData } = data;
+        const { session_id, quality_score, quality_metrics } = eventData;
+
+        // Insert into events table
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id || null,
+            timestamp,
+            'clinical_quality',
+            JSON.stringify({ quality_score, quality_metrics })
+        ]);
+
+        console.log(`✅ Stored clinical quality: Session ${session_id}, Quality ${quality_score}`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('clinical_quality', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing clinical quality:', error);
+    }
+}
+
+// Handle heart rate sensor data
+async function handleHeartRate(data) {
+    try {
+        const { device_id, timestamp, heart_rate, spo2, signal_quality, finger_detected, session_id } = data;
+
+        // Insert into events table as biometric data
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id || null,
+            timestamp / 1000, // Convert milliseconds to seconds
+            'heart_rate',
+            JSON.stringify({
+                heart_rate,
+                spo2,
+                signal_quality,
+                finger_detected,
+                device_id
+            })
+        ]);
+
+        console.log(`✅ Stored heart rate: ${heart_rate} BPM, SpO2: ${spo2}%, Quality: ${signal_quality}`);
+
+        // Emit real-time update via WebSocket
+        console.log(`🔍 WebSocket debug: socketClient=${!!socketClient}, connected=${socketClient?.connected}`);
+        if (socketClient && socketClient.connected) {
+            console.log(`📡 Emitting heart rate WebSocket event:`, data);
+            socketClient.emit('heart_rate', data);
+        } else {
+            console.log(`❌ WebSocket not connected - cannot emit heart rate event`);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing heart rate data:', error);
+    }
+}
+
+// Handle pulse metrics data
+async function handlePulseMetrics(data) {
+    try {
+        const { device_id, timestamp, session_id, avg_heart_rate, min_heart_rate, max_heart_rate, avg_spo2, data_quality } = data;
+
+        // Insert into events table as pulse metrics
+        await dbPool.execute(`
+            INSERT INTO events (
+                session_id, timestamp, event_type, servo_data, created_at
+            ) VALUES (?, FROM_UNIXTIME(?), ?, ?, NOW())
+        `, [
+            session_id || null,
+            timestamp / 1000, // Convert milliseconds to seconds
+            'pulse_metrics',
+            JSON.stringify({
+                avg_heart_rate,
+                min_heart_rate,
+                max_heart_rate,
+                avg_spo2,
+                data_quality,
+                device_id
+            })
+        ]);
+
+        console.log(`✅ Stored pulse metrics: Session ${session_id}, Avg HR: ${avg_heart_rate} BPM`);
+
+        // Emit real-time update via WebSocket
+        if (socketClient && socketClient.connected) {
+            socketClient.emit('pulse_metrics', data);
+        }
+
+    } catch (error) {
+        console.error('❌ Error storing pulse metrics:', error);
     }
 }
 

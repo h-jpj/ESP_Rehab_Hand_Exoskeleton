@@ -6,6 +6,9 @@
 #include <NimBLEServer.h>
 #include <NimBLEUtils.h>
 #include <NimBLECharacteristic.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "../config/Config.h"
 
 enum class BLEStatus {
     UNINITIALIZED,
@@ -20,8 +23,13 @@ class BLEManager {
 public:
     // Initialization and lifecycle
     void initialize();
-    void update();
+    void update();  // Legacy method - will be deprecated
     void shutdown();
+
+    // FreeRTOS task management
+    void startTask();
+    void stopTask();
+    bool isTaskRunning();
     
     // Connection management
     bool isConnected();
@@ -68,7 +76,12 @@ private:
     
     void (*connectionCallback)(bool connected);
     void (*commandCallback)(const String& command);
-    
+
+    // FreeRTOS task management
+    TaskHandle_t taskHandle;
+    bool taskRunning;
+    static void bleServerTask(void* parameter);
+
     // Callback classes
     class ServerCallbacks;
     class CharacteristicCallbacks;

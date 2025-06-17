@@ -6,9 +6,15 @@
 // Include all component managers
 #include "../network/WiFiManager.h"
 #include "../network/MQTTManager.h"
+#include "../network/NetworkWatchdogManager.h"
 #include "../bluetooth/BLEManager.h"
 #include "../hardware/ServoController.h"
 #include "../hardware/SystemMonitor.h"
+#include "../hardware/FreeRTOSManager.h"
+#include "../hardware/I2CManager.h"
+#include "../health/SystemHealthManager.h"
+#include "../analytics/SessionAnalyticsManager.h"
+#include "../sensors/PulseMonitorManager.h"
 #include "../utils/TimeManager.h"
 #include "../utils/Logger.h"
 #include "../utils/ErrorHandler.h"
@@ -38,11 +44,19 @@ public:
     // Component access
     WiFiManager& getWiFiManager();
     MQTTManager& getMQTTManager();
+    NetworkWatchdogManager& getNetworkWatchdogManager();
     BLEManager& getBLEManager();
     ServoController& getServoController();
     SystemMonitor& getSystemMonitor();
+    SystemHealthManager& getSystemHealthManager();
+    SessionAnalyticsManager& getSessionAnalyticsManager();
+    PulseMonitorManager& getPulseMonitorManager();
     CommandProcessor& getCommandProcessor();
     SessionManager& getSessionManager();
+
+    // FreeRTOS system access
+    static bool isFreeRTOSReady();
+    static void logFreeRTOSStatus();
 
     // Command handling
     bool handleCommand(const String& command, CommandSource source);
@@ -63,9 +77,13 @@ private:
     // Component instances
     WiFiManager wifiManager;
     MQTTManager mqttManager;
+    NetworkWatchdogManager networkWatchdogManager;
     BLEManager bleManager;
     ServoController servoController;
     SystemMonitor systemMonitor;
+    SystemHealthManager systemHealthManager;
+    SessionAnalyticsManager sessionAnalyticsManager;
+    PulseMonitorManager pulseMonitorManager;
     CommandProcessor commandProcessor;
     SessionManager sessionManager;
 
@@ -114,6 +132,7 @@ private:
     static void onSessionStart(const String& sessionId);
     static void onSessionEnd(const String& sessionId, const SessionStats& stats);
     static void onSessionStateChange(SessionState oldState, SessionState newState);
+    static void onPulseReading(const HeartRateReading& reading);
 
     // State management
     void setState(DeviceState newState);
@@ -123,6 +142,8 @@ private:
     // Status publishing
     void publishMovementStatus(const Command& command, unsigned long responseTime);
     void publishConnectionStatus();
+    void publishServoAnalytics();
+    void publishSystemHealthData();
 
     // Logging and diagnostics
     void logPerformanceMetrics();

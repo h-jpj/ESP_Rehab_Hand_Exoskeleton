@@ -1,24 +1,52 @@
-# Project Structure
+# ESP32 Rehabilitation Hand Exoskeleton - Project Structure
+
+This document outlines the complete project structure for the ESP32-based rehabilitation hand exoskeleton system.
 
 ## Directory Layout
 
 ```
 ESP_Rehab_Hand_Exoskeleton/
-├── README.md                    # Main project documentation
-├── GETTING_STARTED.md          # Setup instructions
-├── HARDWARE_SETUP.md           # Hardware wiring guide
-├── PROJECT_STRUCTURE.md        # This file
-├── .gitignore                  # Git ignore rules
-├── platformio.ini              # PlatformIO configuration
-├── src/                        # ESP32 firmware source
-│   └── main.cpp                # Main ESP32 application
-└── servo-controller/           # React Native mobile app
-    ├── App.tsx                 # Main app component
-    ├── package.json            # Node.js dependencies
-    ├── app.json                # Expo configuration
-    ├── tsconfig.json           # TypeScript configuration
-    ├── android/                # Android build files
-    └── assets/                 # App assets (icons, etc.)
+├── README.md                           # Main project documentation
+├── CHANGELOG.md                        # Version history and changes
+├── GETTING_STARTED.md                  # Quick start guide
+├── HARDWARE_SETUP.md                   # Hardware wiring and setup
+├── SERVER_SETUP.md                     # Server infrastructure setup
+├── PROJECT_STRUCTURE.md                # This file
+├── DATABASE_QUERIES.md                 # Database schema and queries
+├── FREERTOS_ARCHITECTURE_COMPLETE.md   # FreeRTOS implementation details
+├── platformio.ini                      # PlatformIO configuration
+├── STLs/                              # 3D printing files
+│   └── Base_Plate_ESP.STL             # ESP32 mounting plate
+├── src/                               # ESP32 source code (FreeRTOS)
+│   ├── main.cpp                       # Main application entry point
+│   ├── config/                        # Configuration files
+│   ├── app/                          # Application logic
+│   ├── hardware/                      # Hardware abstraction layer
+│   ├── sensors/                       # Sensor drivers (heart rate, etc.)
+│   ├── bluetooth/                     # BLE communication
+│   ├── network/                       # WiFi and MQTT
+│   ├── analytics/                     # Data analytics
+│   ├── health/                        # Health monitoring
+│   └── utils/                         # Utility functions
+├── servo-controller/                   # React Native mobile app
+│   ├── App.tsx                        # Main app component
+│   ├── package.json                   # Node.js dependencies
+│   ├── app.json                       # Expo configuration
+│   ├── tsconfig.json                  # TypeScript configuration
+│   ├── android/                       # Android build files
+│   └── assets/                        # App assets (icons, etc.)
+├── webapp/                            # Web dashboard
+│   ├── server.js                      # Express.js server with WebSocket
+│   ├── package.json                   # Node.js dependencies
+│   ├── Dockerfile                     # Docker container config
+│   └── public/                        # Frontend files
+│       ├── index.html                 # Main dashboard page
+│       ├── app.js                     # Frontend JavaScript
+│       └── style.css                  # Dashboard styling
+└── mqtt-bridge/                       # MQTT to database bridge
+    ├── mqtt_to_db.js                  # Main bridge application
+    ├── package.json                   # Node.js dependencies
+    └── Dockerfile                     # Docker container config
 ```
 
 ## Key Files

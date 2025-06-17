@@ -3,6 +3,9 @@
 
 #include <Arduino.h>
 #include <WiFi.h>
+#include <freertos/FreeRTOS.h>
+#include <freertos/task.h>
+#include "../config/Config.h"
 
 enum class WiFiStatus {
     DISCONNECTED,
@@ -16,7 +19,13 @@ class WiFiManager {
 public:
     // Initialization and lifecycle
     void initialize();
-    void update();
+    void update();  // Legacy method - will be deprecated
+    void shutdown();
+
+    // FreeRTOS task management
+    void startTask();
+    void stopTask();
+    bool isTaskRunning();
     
     // Connection management
     bool isConnected();
@@ -53,8 +62,13 @@ private:
     unsigned long connectedTime;
     int reconnectionCount;
     int connectionAttempts;
-    
+
     void (*connectionCallback)(bool connected);
+
+    // FreeRTOS task management
+    TaskHandle_t taskHandle;
+    bool taskRunning;
+    static void wifiManagerTask(void* parameter);
     
     // Connection management
     void attemptConnection();

@@ -19,14 +19,22 @@ void MQTTManager::initialize() {
     failedPublishCount = 0;
     lastPublishTime = 0;
     connectionCallback = nullptr;
+    publisherTaskHandle = nullptr;
+    subscriberTaskHandle = nullptr;
+    tasksRunning = false;
 
     mqttClient.setClient(wifiClient);
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
     mqttClient.setBufferSize(MQTT_BUFFER_SIZE);
+    mqttClient.setKeepAlive(60);  // 60 second keep-alive
+    mqttClient.setSocketTimeout(30);  // 30 second socket timeout
 
     initialized = true;
 
-    Logger::infof("MQTT server configured: %s:%d (buffer: %d bytes)",
+    // Start MQTT tasks
+    startTasks();
+
+    Logger::infof("MQTT Manager initialized with FreeRTOS tasks: %s:%d (buffer: %d bytes)",
                  MQTT_SERVER, MQTT_PORT, MQTT_BUFFER_SIZE);
 }
 
@@ -532,6 +540,208 @@ bool MQTTManager::publishClinicalQuality(const String& sessionId, float sessionQ
     bool success = publishJSON(TOPIC_CLINICAL_QUALITY, doc);
     if (success) {
         Logger::debugf("Published clinical quality: Session %s, Quality %.2f", sessionId.c_str(), sessionQuality);
+    }
+
+    return success;
+}
+
+void MQTTManager::shutdown() {
+    if (!initialized) return;
+
+    Logger::info("Shutting down MQTT Manager...");
+
+    stopTasks();
+    disconnect();
+
+    initialized = false;
+    Logger::info("MQTT Manager shutdown complete");
+}
+
+// =============================================================================
+// FREERTOS TASK MANAGEMENT
+// =============================================================================
+
+void MQTTManager::startTasks() {
+    if (tasksRunning || publisherTaskHandle || subscriberTaskHandle) return;
+
+    // Create MQTT Publisher Task
+    BaseType_t publisherResult = xTaskCreatePinnedToCore(
+        mqttPublisherTask,
+        "MQTTPublisher",
+        TASK_STACK_MQTT_PUBLISHER,
+        this,
+        PRIORITY_MQTT_PUBLISHER,
+        &publisherTaskHandle,
+        CORE_PROTOCOL  // Core 0 for protocol tasks
+    );
+
+    // Create MQTT Subscriber Task
+    BaseType_t subscriberResult = xTaskCreatePinnedToCore(
+        mqttSubscriberTask,
+        "MQTTSubscriber",
+        TASK_STACK_MQTT_SUBSCRIBER,
+        this,
+        PRIORITY_MQTT_SUBSCRIBER,
+        &subscriberTaskHandle,
+        CORE_PROTOCOL  // Core 0 for protocol tasks
+    );
+
+    if (publisherResult == pdPASS && subscriberResult == pdPASS) {
+        tasksRunning = true;
+        Logger::info("MQTT Publisher and Subscriber tasks started on Core 0");
+    } else {
+        Logger::error("Failed to create MQTT tasks");
+        stopTasks();  // Clean up any partially created tasks
+    }
+}
+
+void MQTTManager::stopTasks() {
+    if (!tasksRunning) return;
+
+    tasksRunning = false;
+
+    if (publisherTaskHandle) {
+        vTaskDelete(publisherTaskHandle);
+        publisherTaskHandle = nullptr;
+    }
+
+    if (subscriberTaskHandle) {
+        vTaskDelete(subscriberTaskHandle);
+        subscriberTaskHandle = nullptr;
+    }
+
+    Logger::info("MQTT tasks stopped");
+}
+
+bool MQTTManager::areTasksRunning() {
+    return tasksRunning && publisherTaskHandle != nullptr && subscriberTaskHandle != nullptr;
+}
+
+// Queue-based publishing for thread-safe operations
+bool MQTTManager::queueMessage(const char* topic, const String& payload, bool retain, uint8_t priority) {
+    // For now, fall back to direct publishing since FreeRTOS Manager is disabled
+    // TODO: Implement proper queue-based publishing when FreeRTOS Manager is re-enabled
+    return publishWithRetry(topic, payload, retain);
+}
+
+// =============================================================================
+// FREERTOS TASK FUNCTIONS
+// =============================================================================
+
+void MQTTManager::mqttPublisherTask(void* parameter) {
+    MQTTManager* manager = (MQTTManager*)parameter;
+    Logger::info("MQTT Publisher task started");
+
+    while (manager->tasksRunning) {
+        // TODO: Process messages from publish queue when FreeRTOS Manager is re-enabled
+        // For now, just maintain connection and handle basic operations
+
+        if (manager->isConnected()) {
+            // Publisher task is ready for queue-based publishing
+            // Currently using direct publishing through existing methods
+        }
+
+        // Feed watchdog (when FreeRTOS Manager is re-enabled)
+        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+
+        // Publisher runs at 100Hz for responsive publishing
+        vTaskDelay(pdMS_TO_TICKS(10));
+    }
+
+    Logger::info("MQTT Publisher task ended");
+    vTaskDelete(nullptr);  // Delete self
+}
+
+void MQTTManager::mqttSubscriberTask(void* parameter) {
+    MQTTManager* manager = (MQTTManager*)parameter;
+    Logger::info("MQTT Subscriber task started");
+
+    while (manager->tasksRunning) {
+        // Handle MQTT client loop and connection management
+        if (manager->mqttClient.connected()) {
+            manager->mqttClient.loop();  // Process incoming messages
+        }
+
+        // Handle connection events and status updates
+        manager->handleConnectionEvents();
+        manager->updateConnectionStatus();
+
+        // Handle reconnection logic
+        if ((manager->currentStatus == MQTTStatus::DISCONNECTED ||
+             manager->currentStatus == MQTTStatus::CONNECTION_FAILED) &&
+            WiFi.status() == WL_CONNECTED) {
+
+            unsigned long now = millis();
+            if (now - manager->lastReconnectAttempt >= MQTT_RECONNECT_INTERVAL) {
+                manager->attemptConnection();
+            }
+        }
+
+        // Feed watchdog (when FreeRTOS Manager is re-enabled)
+        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+
+        // Subscriber runs at 20Hz for connection management
+        vTaskDelay(pdMS_TO_TICKS(50));
+    }
+
+    Logger::info("MQTT Subscriber task ended");
+    vTaskDelete(nullptr);  // Delete self
+}
+
+// =============================================================================
+// BIOMETRIC DATA PUBLISHING
+// =============================================================================
+
+bool MQTTManager::publishHeartRate(float heartRate, float spO2, const String& quality,
+                                  bool fingerDetected, const String& sessionId) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc;
+    doc["device_id"] = DEVICE_ID;
+    doc["timestamp"] = millis();
+    doc["heart_rate"] = heartRate;
+    doc["spo2"] = spO2;
+    doc["signal_quality"] = quality;
+    doc["finger_detected"] = fingerDetected;
+    doc["session_id"] = sessionId;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    bool success = publish(TOPIC_SENSOR_HEART_RATE, payload);
+
+    if (success) {
+        Logger::infof("Published heart rate: %.1f BPM, SpO2: %.1f%%, Quality: %s",
+                      heartRate, spO2, quality.c_str());
+    } else {
+        Logger::warningf("Failed to publish heart rate: %.1f BPM, SpO2: %.1f%%",
+                        heartRate, spO2);
+    }
+
+    return success;
+}
+
+bool MQTTManager::publishPulseMetrics(const String& sessionId, float avgHeartRate, float minHeartRate,
+                                     float maxHeartRate, float avgSpO2, float dataQuality) {
+    if (!isConnected()) return false;
+
+    JsonDocument doc;
+    doc["device_id"] = DEVICE_ID;
+    doc["timestamp"] = millis();
+    doc["session_id"] = sessionId;
+    doc["avg_heart_rate"] = avgHeartRate;
+    doc["min_heart_rate"] = minHeartRate;
+    doc["max_heart_rate"] = maxHeartRate;
+    doc["avg_spo2"] = avgSpO2;
+    doc["data_quality"] = dataQuality;
+
+    String payload;
+    serializeJson(doc, payload);
+
+    bool success = publish("rehab_exo/pulse_metrics", payload);
+
+    if (success) {
+        Logger::debugf("Published pulse metrics for session: %s", sessionId.c_str());
     }
 
     return success;

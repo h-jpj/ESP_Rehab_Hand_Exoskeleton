@@ -36,6 +36,12 @@ const char* TOPIC_PERFORMANCE_MEMORY = "rehab_exo/ESP32_001/performance/memory";
 const char* TOPIC_CLINICAL_PROGRESS = "rehab_exo/ESP32_001/clinical/progress";
 const char* TOPIC_CLINICAL_QUALITY = "rehab_exo/ESP32_001/clinical/quality";
 
+// Future Sensor Topics (InfluxDB Ready)
+const char* TOPIC_SENSOR_HEART_RATE = "rehab_exo/ESP32_001/sensors/heart_rate";
+const char* TOPIC_SENSOR_MOTION = "rehab_exo/ESP32_001/sensors/motion";
+const char* TOPIC_SENSOR_PRESSURE = "rehab_exo/ESP32_001/sensors/pressure";
+const char* TOPIC_SENSOR_ANALYTICS = "rehab_exo/ESP32_001/sensors/analytics";
+
 // BLE Configuration
 const char* BLE_SERVICE_UUID = "4fafc201-1fb5-459e-8fcc-c5c9c331914b";
 const char* BLE_CHARACTERISTIC_UUID = "beb5483e-36e1-4688-b7f5-ea07361b26a8";

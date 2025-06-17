@@ -424,8 +424,8 @@ SELECT COUNT(*) FROM system_status;
 ```
 Host: mariadb:3306
 Database: rehab_exoskeleton
-User: jay
-Password: aes
+User: your_username
+Password: your_password
 ```
 
 This reference file eliminates the need to write queries from scratch and provides a complete foundation for setting up the rehabilitation analytics system.
