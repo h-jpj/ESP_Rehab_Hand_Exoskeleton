@@ -209,7 +209,13 @@ src/
 - **Performance Tracking**: Loop times, response times, reliability metrics
 - **Clinical Data**: Movement quality, session progress, improvement trends
 
-## 🔧 Wiring Diagram
+## 🔧 Circuit Diagram & Wiring
+
+![Circuit Diagram](circuit_diagram.svg)
+
+*Professional circuit diagram showing complete system connections - see [WIRING_REFERENCE.md](WIRING_REFERENCE.md) for detailed assembly guide*
+
+### Connection Summary
 
 ### Servo Connections
 | Component | ESP32 Pin |

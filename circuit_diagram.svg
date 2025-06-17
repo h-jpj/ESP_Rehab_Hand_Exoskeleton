@@ -1,0 +1,1166 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg
+   width="1200"
+   height="800"
+   version="1.1"
+   id="svg103"
+   sodipodi:docname="circuit_diagram.svg"
+   inkscape:version="1.4.2 (ebf0e94, 2025-05-08)"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:svg="http://www.w3.org/2000/svg">
+  <sodipodi:namedview
+     id="namedview103"
+     pagecolor="#ffffff"
+     bordercolor="#000000"
+     borderopacity="0.25"
+     inkscape:showpageshadow="2"
+     inkscape:pageopacity="0.0"
+     inkscape:pagecheckerboard="0"
+     inkscape:deskcolor="#d1d1d1"
+     inkscape:zoom="1.05"
+     inkscape:cx="574.28571"
+     inkscape:cy="380.95238"
+     inkscape:window-width="1916"
+     inkscape:window-height="1023"
+     inkscape:window-x="0"
+     inkscape:window-y="55"
+     inkscape:window-maximized="1"
+     inkscape:current-layer="svg103" />
+  <defs
+     id="defs1">
+    <style
+       id="style1">
+      .component-box { fill: #f0f0f0; stroke: #333; stroke-width: 2; }
+      .esp32-box { fill: #e6f3ff; stroke: #0066cc; stroke-width: 3; }
+      .servo-box { fill: #fff2e6; stroke: #ff6600; stroke-width: 2; }
+      .sensor-box { fill: #e6ffe6; stroke: #009900; stroke-width: 2; }
+      .power-line { stroke: #ff0000; stroke-width: 3; fill: none; }
+      .ground-line { stroke: #000000; stroke-width: 3; fill: none; }
+      .signal-line { stroke: #0066ff; stroke-width: 2; fill: none; }
+      .i2c-line { stroke: #9900cc; stroke-width: 2; fill: none; }
+      .text-label { font-family: Arial, sans-serif; font-size: 12px; fill: #333; }
+      .pin-label { font-family: Arial, sans-serif; font-size: 10px; fill: #666; }
+      .title { font-family: Arial, sans-serif; font-size: 18px; font-weight: bold; fill: #333; }
+      .subtitle { font-family: Arial, sans-serif; font-size: 14px; fill: #666; }
+      .power-label { font-family: Arial, sans-serif; font-size: 10px; fill: #ff0000; font-weight: bold; }
+      .ground-label { font-family: Arial, sans-serif; font-size: 10px; fill: #000000; font-weight: bold; }
+    </style>
+  </defs>
+  <!-- Title -->
+  <text
+     x="600"
+     y="30"
+     class="title"
+     text-anchor="middle"
+     id="text1">ESP32 Rehabilitation Hand Exoskeleton - Circuit Diagram</text>
+  <text
+     x="600"
+     y="50"
+     class="subtitle"
+     text-anchor="middle"
+     id="text2">FreeRTOS System with Biometric Monitoring</text>
+  <!-- ESP32 Development Board -->
+  <rect
+     x="450"
+     y="300"
+     width="300"
+     height="200"
+     class="esp32-box"
+     rx="10"
+     id="rect2" />
+  <text
+     x="600"
+     y="320"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text3">ESP32-WROOM-32</text>
+  <text
+     x="600"
+     y="335"
+     class="text-label"
+     text-anchor="middle"
+     id="text4">Development Board</text>
+  <!-- ESP32 Pins - Left Side -->
+  <circle
+     cx="460"
+     cy="350"
+     r="3"
+     fill="#333"
+     id="circle4" />
+  <text
+     x="440"
+     y="355"
+     class="pin-label"
+     text-anchor="end"
+     id="text5">GPIO19</text>
+  <circle
+     cx="460"
+     cy="370"
+     r="3"
+     fill="#333"
+     id="circle5" />
+  <text
+     x="440"
+     y="375"
+     class="pin-label"
+     text-anchor="end"
+     id="text6">GPIO22</text>
+  <circle
+     cx="460"
+     cy="390"
+     r="3"
+     fill="#333"
+     id="circle6" />
+  <text
+     x="440"
+     y="395"
+     class="pin-label"
+     text-anchor="end"
+     id="text7">GPIO23</text>
+  <circle
+     cx="460"
+     cy="420"
+     r="3"
+     fill="#333"
+     id="circle7" />
+  <text
+     x="440"
+     y="425"
+     class="pin-label"
+     text-anchor="end"
+     id="text8">GPIO21</text>
+  <circle
+     cx="460"
+     cy="440"
+     r="3"
+     fill="#333"
+     id="circle8" />
+  <text
+     x="440"
+     y="445"
+     class="pin-label"
+     text-anchor="end"
+     id="text9">GPIO18</text>
+  <circle
+     cx="460"
+     cy="460"
+     r="3"
+     fill="#333"
+     id="circle9" />
+  <text
+     x="440"
+     y="465"
+     class="pin-label"
+     text-anchor="end"
+     id="text10">GPIO4</text>
+  <!-- ESP32 Pins - Right Side -->
+  <circle
+     cx="740"
+     cy="350"
+     r="3"
+     fill="#ff0000"
+     id="circle10" />
+  <text
+     x="760"
+     y="355"
+     class="pin-label"
+     id="text11">Vin (5V)</text>
+  <circle
+     cx="740"
+     cy="370"
+     r="3"
+     fill="#ff6600"
+     id="circle11" />
+  <text
+     x="760"
+     y="375"
+     class="pin-label"
+     id="text12">3.3V</text>
+  <circle
+     cx="740"
+     cy="389.04761"
+     r="3"
+     fill="#000000"
+     id="circle12" />
+  <text
+     x="756.66669"
+     y="394.04761"
+     class="pin-label"
+     id="text13">GND</text>
+  <circle
+     cx="740"
+     cy="403.33334"
+     r="3"
+     fill="#000000"
+     id="circle13" />
+  <text
+     x="756.66669"
+     y="408.80951"
+     class="pin-label"
+     id="text14">GND</text>
+  <!-- USB Connector -->
+  <rect
+     x="570"
+     y="280"
+     width="60"
+     height="15"
+     class="component-box"
+     id="rect14" />
+  <text
+     x="600"
+     y="292"
+     class="pin-label"
+     text-anchor="middle"
+     id="text15">USB-C</text>
+  <text
+     x="600"
+     y="275"
+     class="pin-label"
+     text-anchor="middle"
+     id="text16">Programming  Power</text>
+  <!-- Servo Motors -->
+  <!-- Servo 1 -->
+  <rect
+     x="50"
+     y="100"
+     width="120"
+     height="80"
+     class="servo-box"
+     rx="5"
+     id="rect16" />
+  <text
+     x="110"
+     y="125"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text17">Servo Motor 1</text>
+  <text
+     x="110"
+     y="140"
+     class="text-label"
+     text-anchor="middle"
+     id="text18">SG90 / miuzei ms18</text>
+  <text
+     x="110"
+     y="155"
+     class="text-label"
+     text-anchor="middle"
+     id="text19">Finger Control</text>
+  <!-- Servo 1 Pins -->
+  <circle
+     cx="170"
+     cy="120"
+     r="3"
+     fill="#ff0000"
+     id="circle19" />
+  <text
+     x="185"
+     y="125"
+     class="pin-label"
+     id="text20">VCC</text>
+  <circle
+     cx="170"
+     cy="140"
+     r="3"
+     fill="#0066ff"
+     id="circle20" />
+  <text
+     x="185"
+     y="145"
+     class="pin-label"
+     id="text21">Signal</text>
+  <circle
+     cx="170"
+     cy="160"
+     r="3"
+     fill="#000"
+     id="circle21" />
+  <text
+     x="185"
+     y="165"
+     class="pin-label"
+     id="text22">GND</text>
+  <!-- Servo 2 -->
+  <rect
+     x="250"
+     y="100"
+     width="120"
+     height="80"
+     class="servo-box"
+     rx="5"
+     id="rect22" />
+  <text
+     x="310"
+     y="125"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text23">Servo Motor 2</text>
+  <text
+     x="310"
+     y="140"
+     class="text-label"
+     text-anchor="middle"
+     id="text24">SG90 / miuzei ms18</text>
+  <text
+     x="310"
+     y="155"
+     class="text-label"
+     text-anchor="middle"
+     id="text25">Finger Control</text>
+  <!-- Servo 2 Pins -->
+  <circle
+     cx="370"
+     cy="120"
+     r="3"
+     fill="#ff0000"
+     id="circle25" />
+  <text
+     x="385"
+     y="125"
+     class="pin-label"
+     id="text26">VCC</text>
+  <circle
+     cx="370"
+     cy="140"
+     r="3"
+     fill="#0066ff"
+     id="circle26" />
+  <text
+     x="385"
+     y="145"
+     class="pin-label"
+     id="text27">Signal</text>
+  <circle
+     cx="370"
+     cy="160"
+     r="3"
+     fill="#000"
+     id="circle27" />
+  <text
+     x="385"
+     y="165"
+     class="pin-label"
+     id="text28">GND</text>
+  <!-- Servo 3 -->
+  <rect
+     x="450"
+     y="100"
+     width="120"
+     height="80"
+     class="servo-box"
+     rx="5"
+     id="rect28" />
+  <text
+     x="510"
+     y="125"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text29">Servo Motor 3</text>
+  <text
+     x="510"
+     y="140"
+     class="text-label"
+     text-anchor="middle"
+     id="text30">SG90 / miuzei ms18</text>
+  <text
+     x="510"
+     y="155"
+     class="text-label"
+     text-anchor="middle"
+     id="text31">Finger Control</text>
+  <!-- Servo 3 Pins -->
+  <circle
+     cx="570"
+     cy="120"
+     r="3"
+     fill="#ff0000"
+     id="circle31" />
+  <text
+     x="585"
+     y="125"
+     class="pin-label"
+     id="text32">VCC</text>
+  <circle
+     cx="570"
+     cy="140"
+     r="3"
+     fill="#0066ff"
+     id="circle32" />
+  <text
+     x="585"
+     y="145"
+     class="pin-label"
+     id="text33">Signal</text>
+  <circle
+     cx="570"
+     cy="160"
+     r="3"
+     fill="#000"
+     id="circle33" />
+  <text
+     x="585"
+     y="165"
+     class="pin-label"
+     id="text34">GND</text>
+  <!-- Heart Rate Sensor -->
+  <rect
+     x="850"
+     y="350"
+     width="150"
+     height="100"
+     class="sensor-box"
+     rx="5"
+     id="rect34" />
+  <text
+     x="925"
+     y="375"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text35">GY-MAX30102</text>
+  <text
+     x="925"
+     y="390"
+     class="text-label"
+     text-anchor="middle"
+     id="text36">Heart Rate Sensor</text>
+  <text
+     x="925"
+     y="405"
+     class="text-label"
+     text-anchor="middle"
+     id="text37">Pulse Oximetry</text>
+  <!-- Sensor Pins -->
+  <circle
+     cx="850"
+     cy="370"
+     r="3"
+     fill="#ff6600"
+     id="circle37" />
+  <text
+     x="830"
+     y="375"
+     class="pin-label"
+     text-anchor="end"
+     id="text38">VCC</text>
+  <circle
+     cx="850"
+     cy="390"
+     r="3"
+     fill="#000"
+     id="circle38" />
+  <text
+     x="830"
+     y="395"
+     class="pin-label"
+     text-anchor="end"
+     id="text39">GND</text>
+  <circle
+     cx="850"
+     cy="410"
+     r="3"
+     fill="#9900cc"
+     id="circle39" />
+  <text
+     x="834.7619"
+     y="422.61905"
+     class="pin-label"
+     text-anchor="end"
+     id="text40">SCL</text>
+  <circle
+     cx="850"
+     cy="430"
+     r="3"
+     fill="#9900cc"
+     id="circle40" />
+  <text
+     x="834.7619"
+     y="442.61905"
+     class="pin-label"
+     text-anchor="end"
+     id="text41">SDA</text>
+  <circle
+     cx="850"
+     cy="450"
+     r="3"
+     fill="#666"
+     id="circle41" />
+  <text
+     x="833.80951"
+     y="460.23813"
+     class="pin-label"
+     text-anchor="end"
+     id="text42">INT</text>
+  <!-- Power Rails -->
+  <rect
+     x="50"
+     y="220"
+     width="700"
+     height="15"
+     fill="#ffcccc"
+     stroke="#ff0000"
+     stroke-width="2"
+     id="rect42" />
+  <text
+     x="55"
+     y="232"
+     class="power-label"
+     id="text43">+5V Power Rail (Servo Power)</text>
+  <rect
+     x="50"
+     y="240"
+     width="700"
+     height="15"
+     fill="#ffe6cc"
+     stroke="#ff6600"
+     stroke-width="2"
+     id="rect43" />
+  <text
+     x="55"
+     y="252"
+     class="power-label"
+     id="text44">+3.3V Power Rail (Sensor Power)</text>
+  <rect
+     x="50"
+     y="260"
+     width="700"
+     height="15"
+     fill="#cccccc"
+     stroke="#000"
+     stroke-width="2"
+     id="rect44" />
+  <text
+     x="55"
+     y="272"
+     class="ground-label"
+     id="text45">Ground Rail (Common Ground)</text>
+  <!-- Connections -->
+  <!-- Power connections from ESP32 to rails -->
+  <line
+     x1="740"
+     y1="350"
+     x2="740"
+     y2="227"
+     class="power-line"
+     id="line45" />
+  <line
+     x1="729.04761"
+     y1="370.95239"
+     x2="729.04761"
+     y2="247.95239"
+     stroke="#ff6600"
+     stroke-width="3"
+     fill="none"
+     id="line46" />
+  <line
+     x1="713.33331"
+     y1="389.56586"
+     x2="713.33331"
+     y2="263.83997"
+     class="ground-line"
+     id="line47" />
+  <!-- Servo power connections -->
+  <line
+     x1="181.42857"
+     y1="120.4762"
+     x2="181.42857"
+     y2="220.33333"
+     class="power-line"
+     id="line48" />
+  <line
+     x1="381.7851"
+     y1="119.66328"
+     x2="381.7851"
+     y2="226.66328"
+     class="power-line"
+     id="line49" />
+  <line
+     x1="581.42859"
+     y1="119.04762"
+     x2="581.42859"
+     y2="226.04762"
+     class="power-line"
+     id="line50" />
+  <!-- Servo ground connections -->
+  <line
+     x1="170"
+     y1="160"
+     x2="170"
+     y2="267"
+     class="ground-line"
+     id="line51" />
+  <line
+     x1="370"
+     y1="160"
+     x2="370"
+     y2="267"
+     class="ground-line"
+     id="line52" />
+  <line
+     x1="570"
+     y1="160"
+     x2="570"
+     y2="267"
+     class="ground-line"
+     id="line53" />
+  <!-- Servo signal connections -->
+  <line
+     x1="176.06091"
+     y1="140.67343"
+     x2="176.06091"
+     y2="200.67343"
+     class="signal-line"
+     id="line54" />
+  <line
+     x1="174.71405"
+     y1="200"
+     x2="400"
+     y2="200"
+     class="signal-line"
+     id="line55" />
+  <line
+     x1="400"
+     y1="200"
+     x2="400"
+     y2="350"
+     class="signal-line"
+     id="line56" />
+  <line
+     x1="400"
+     y1="350"
+     x2="460"
+     y2="350"
+     class="signal-line"
+     id="line57" />
+  <text
+     x="285"
+     y="195"
+     class="pin-label"
+     text-anchor="middle"
+     id="text57">GPIO19</text>
+  <line
+     x1="376.06091"
+     y1="140"
+     x2="376.06091"
+     y2="210"
+     class="signal-line"
+     id="line58" />
+  <line
+     x1="376.06091"
+     y1="210"
+     x2="410"
+     y2="210"
+     class="signal-line"
+     id="line59" />
+  <line
+     x1="170.13193"
+     y1="140.68556"
+     x2="177.1727"
+     y2="140.68556"
+     class="signal-line"
+     id="line59-3"
+     style="fill:none;stroke:#0066ff;stroke-width:0.839094" />
+  <line
+     x1="369.8215"
+     y1="140.5676"
+     x2="376.86227"
+     y2="140.5676"
+     class="signal-line"
+     id="line59-3-6"
+     style="fill:none;stroke:#0066ff;stroke-width:0.839094" />
+  <line
+     x1="569.31641"
+     y1="139.5676"
+     x2="576.35718"
+     y2="139.5676"
+     class="signal-line"
+     id="line59-3-6-4"
+     style="fill:none;stroke:#0066ff;stroke-width:0.839094" />
+  <line
+     x1="410"
+     y1="210"
+     x2="410"
+     y2="370"
+     class="signal-line"
+     id="line60" />
+  <line
+     x1="410"
+     y1="370"
+     x2="460"
+     y2="370"
+     class="signal-line"
+     id="line61" />
+  <text
+     x="425.35535"
+     y="210.7242"
+     class="pin-label"
+     text-anchor="middle"
+     id="text61">GPIO22</text>
+  <line
+     x1="575.71429"
+     y1="139.04762"
+     x2="575.71429"
+     y2="217.02731"
+     class="signal-line"
+     id="line62" />
+  <line
+     x1="576.06091"
+     y1="216.29611"
+     x2="420"
+     y2="216.29611"
+     class="signal-line"
+     id="line63" />
+  <line
+     x1="420.16837"
+     y1="215.28595"
+     x2="420.16837"
+     y2="390"
+     class="signal-line"
+     id="line64" />
+  <line
+     x1="420"
+     y1="390"
+     x2="460"
+     y2="390"
+     class="signal-line"
+     id="line65" />
+  <text
+     x="495"
+     y="215"
+     class="pin-label"
+     text-anchor="middle"
+     id="text65">GPIO23</text>
+  <!-- Sensor power connections -->
+  <line
+     x1="850"
+     y1="370"
+     x2="780"
+     y2="370"
+     stroke="#ff6600"
+     stroke-width="3"
+     fill="none"
+     id="line66" />
+  <line
+     x1="780.20642"
+     y1="247.95514"
+     x2="744.2149"
+     y2="247.95514"
+     stroke="#ff6600"
+     stroke-width="2.15116"
+     fill="none"
+     id="line66-3" />
+  <line
+     x1="740.30963"
+     y1="370.66205"
+     x2="727.88831"
+     y2="370.66205"
+     stroke="#ff6600"
+     stroke-width="1.26374"
+     fill="none"
+     id="line66-3-5" />
+  <line
+     x1="780"
+     y1="370"
+     x2="780"
+     y2="247"
+     stroke="#ff6600"
+     stroke-width="3"
+     fill="none"
+     id="line67" />
+  <line
+     x1="850"
+     y1="390"
+     x2="800"
+     y2="390"
+     class="ground-line"
+     id="line68" />
+  <line
+     x1="740.26056"
+     y1="389.15314"
+     x2="711.81049"
+     y2="389.15314"
+     class="ground-line"
+     id="line68-8"
+     style="fill:none;stroke:#000000;stroke-width:2.26297" />
+  <line
+     x1="800.62604"
+     y1="268.7034"
+     x2="745.23859"
+     y2="268.7034"
+     class="ground-line"
+     id="line68-8-3"
+     style="fill:none;stroke:#000000;stroke-width:3.15749" />
+  <line
+     x1="800"
+     y1="390"
+     x2="800"
+     y2="267"
+     class="ground-line"
+     id="line69" />
+  <!-- I2C connections -->
+  <line
+     x1="850"
+     y1="410"
+     x2="780"
+     y2="410"
+     class="i2c-line"
+     id="line70" />
+  <line
+     x1="780"
+     y1="410"
+     x2="780"
+     y2="420"
+     class="i2c-line"
+     id="line71" />
+  <line
+     x1="791.0238"
+     y1="429.71429"
+     x2="791.0238"
+     y2="483.04764"
+     class="i2c-line"
+     id="line71-5"
+     style="fill:#0066cc;stroke:#9900cc;stroke-width:4.61881;fill-opacity:1" />
+  <line
+     x1="515.92847"
+     y1="439"
+     x2="515.92847"
+     y2="481.85715"
+     class="i2c-line"
+     id="line71-5-0"
+     style="fill:#0066cc;fill-opacity:1;stroke:#9900cc;stroke-width:4.1404" />
+  <line
+     x1="781.42853"
+     y1="420.47617"
+     x2="461.42856"
+     y2="420.47617"
+     class="i2c-line"
+     id="line72" />
+  <text
+     x="655"
+     y="415"
+     class="pin-label"
+     text-anchor="middle"
+     id="text72">SCL (GPIO21)</text>
+  <line
+     x1="850"
+     y1="430.47617"
+     x2="790"
+     y2="430.47617"
+     class="i2c-line"
+     id="line73" />
+  <line
+     x1="517.90479"
+     y1="439.66666"
+     x2="457.90475"
+     y2="439.66666"
+     class="i2c-line"
+     id="line73-7"
+     style="fill:none;stroke:#9900cc;stroke-width:2" />
+  <line
+     x1="790"
+     y1="481.90479"
+     x2="513.80951"
+     y2="481.90479"
+     class="i2c-line"
+     id="line75" />
+  <line
+     x1="714.57141"
+     y1="480.96698"
+     x2="680.7619"
+     y2="480.96698"
+     class="i2c-line"
+     id="line75-7"
+     style="fill:none;stroke:#9900cc;stroke-width:0.640167" />
+  <text
+     x="619.7619"
+     y="477.38095"
+     class="pin-label"
+     text-anchor="middle"
+     id="text75">SDA (GPIO18)</text>
+  <line
+     x1="849.04761"
+     y1="450"
+     x2="799.04761"
+     y2="450"
+     stroke="#666666"
+     stroke-width="2"
+     fill="none"
+     id="line76" />
+  <line
+     x1="800"
+     y1="450"
+     x2="800"
+     y2="517.14288"
+     stroke="#666666"
+     stroke-width="2"
+     fill="none"
+     id="line77" />
+  <line
+     x1="460"
+     y1="460.4762"
+     x2="460"
+     y2="516.66669"
+     stroke="#666666"
+     stroke-width="1.82962"
+     fill="none"
+     id="line77-9"
+     style="fill:#666666;fill-opacity:1" />
+  <line
+     x1="799.5238"
+     y1="516.66669"
+     x2="459.5238"
+     y2="516.66669"
+     stroke="#666666"
+     stroke-width="2"
+     fill="none"
+     id="line78" />
+  <text
+     x="622.61902"
+     y="513.09521"
+     class="pin-label"
+     text-anchor="middle"
+     id="text78">INT (GPIO4)</text>
+  <!-- Legend -->
+  <rect
+     x="50"
+     y="550"
+     width="300"
+     height="200"
+     fill="none"
+     stroke="#333"
+     stroke-width="1"
+     id="rect78" />
+  <text
+     x="200"
+     y="570"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text79">Connection Legend</text>
+  <line
+     x1="70"
+     y1="590"
+     x2="120"
+     y2="590"
+     class="power-line"
+     id="line79" />
+  <text
+     x="130"
+     y="595"
+     class="text-label"
+     id="text80">+5V Power (Servo Motors)</text>
+  <line
+     x1="70"
+     y1="610"
+     x2="120"
+     y2="610"
+     stroke="#ff6600"
+     stroke-width="3"
+     fill="none"
+     id="line80" />
+  <text
+     x="130"
+     y="615"
+     class="text-label"
+     id="text81">+3.3V Power (Heart Rate Sensor)</text>
+  <line
+     x1="70"
+     y1="630"
+     x2="120"
+     y2="630"
+     class="ground-line"
+     id="line81" />
+  <text
+     x="130"
+     y="635"
+     class="text-label"
+     id="text82">Ground (Common)</text>
+  <line
+     x1="70"
+     y1="650"
+     x2="120"
+     y2="650"
+     class="signal-line"
+     id="line82" />
+  <text
+     x="130"
+     y="655"
+     class="text-label"
+     id="text83">PWM Signal (Servo Control)</text>
+  <line
+     x1="70"
+     y1="670"
+     x2="120"
+     y2="670"
+     class="i2c-line"
+     id="line83" />
+  <text
+     x="130"
+     y="675"
+     class="text-label"
+     id="text84">I2C Communication (SCL/SDA)</text>
+  <line
+     x1="70"
+     y1="690"
+     x2="120"
+     y2="690"
+     stroke="#666"
+     stroke-width="2"
+     fill="none"
+     id="line84" />
+  <text
+     x="130"
+     y="695"
+     class="text-label"
+     id="text85">Interrupt Signal (Optional)</text>
+  <!-- Technical Specifications -->
+  <rect
+     x="400"
+     y="550"
+     width="350"
+     height="200"
+     fill="none"
+     stroke="#333"
+     stroke-width="1"
+     id="rect85" />
+  <text
+     x="575"
+     y="570"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     id="text86">Technical Specifications</text>
+  <text
+     x="420"
+     y="590"
+     class="text-label"
+     id="text87">• ESP32: Dual-core 240MHz, WiFi + Bluetooth</text>
+  <text
+     x="420"
+     y="605"
+     class="text-label"
+     id="text88">• Servo Motors: 3x SG90/miuzei ms18 (9g micro)</text>
+  <text
+     x="420"
+     y="620"
+     class="text-label"
+     id="text89">• Heart Rate Sensor: GY-MAX30102 (I2C)</text>
+  <text
+     x="420"
+     y="635"
+     class="text-label"
+     id="text90">• Power: USB 5V (demo) or external 5V/3A</text>
+  <text
+     x="420"
+     y="650"
+     class="text-label"
+     id="text91">• Communication: BLE + WiFi/MQTT</text>
+  <text
+     x="420"
+     y="665"
+     class="text-label"
+     id="text92">• Architecture: FreeRTOS 8-task system</text>
+  <text
+     x="420"
+     y="680"
+     class="text-label"
+     id="text93">• Features: Real-time biometric monitoring</text>
+  <text
+     x="420"
+     y="695"
+     class="text-label"
+     id="text94">• License: GNU GPL v3.0</text>
+  <!-- Safety Warning -->
+  <rect
+     x="800"
+     y="550"
+     width="350"
+     height="200"
+     fill="#fff5f5"
+     stroke="#ff0000"
+     stroke-width="2"
+     id="rect94" />
+  <text
+     x="975"
+     y="570"
+     class="text-label"
+     text-anchor="middle"
+     font-weight="bold"
+     fill="#cc0000"
+     id="text95">⚠️ SAFETY WARNINGS</text>
+  <text
+     x="820"
+     y="590"
+     class="text-label"
+     fill="#cc0000"
+     id="text96">• Disconnect power before wiring</text>
+  <text
+     x="820"
+     y="605"
+     class="text-label"
+     fill="#cc0000"
+     id="text97">• Check polarity before connecting</text>
+  <text
+     x="820"
+     y="620"
+     class="text-label"
+     fill="#cc0000"
+     id="text98">• Use 3.3V for sensor (NOT 5V)</text>
+  <text
+     x="820"
+     y="635"
+     class="text-label"
+     fill="#cc0000"
+     id="text99">• External power recommended for production</text>
+  <text
+     x="820"
+     y="650"
+     class="text-label"
+     fill="#cc0000"
+     id="text100">• Not certified for medical use</text>
+  <text
+     x="820"
+     y="665"
+     class="text-label"
+     fill="#cc0000"
+     id="text101">• Implement safety interlocks</text>
+  <text
+     x="820"
+     y="680"
+     class="text-label"
+     fill="#cc0000"
+     id="text102">• Monitor servo current draw</text>
+  <text
+     x="820"
+     y="695"
+     class="text-label"
+     fill="#cc0000"
+     id="text103">• Test thoroughly before use</text>
+  <rect
+     style="fill:#ff0000;stroke:#ff0000;stroke-width:0.726075;stroke-opacity:1"
+     id="rect103"
+     width="13.405909"
+     height="1.2840772"
+     x="369.24216"
+     y="120.07119" />
+  <rect
+     style="fill:#ff0000;stroke:#ff0000;stroke-width:0.726075;stroke-opacity:1"
+     id="rect103-4"
+     width="13.405909"
+     height="1.2840772"
+     x="568.88684"
+     y="119.4549" />
+  <rect
+     style="fill:#ff0000;stroke:#ff0000;stroke-width:0.726075;stroke-opacity:1"
+     id="rect103-2"
+     width="13.405909"
+     height="1.2840772"
+     x="169.05351"
+     y="120.88685" />
+</svg>

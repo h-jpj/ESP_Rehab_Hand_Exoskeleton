@@ -47,6 +47,12 @@ GPIO 4       | INT         | Interrupt Pin (optional)
 GND          | GND         | Ground
 ```
 
+## Circuit Diagram
+
+![Circuit Diagram](circuit_diagram.svg)
+
+*Professional circuit diagram showing all connections, power rails, and component specifications*
+
 ## Physical Wiring Diagram
 
 ```
