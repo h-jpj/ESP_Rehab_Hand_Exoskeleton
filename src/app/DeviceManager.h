@@ -6,13 +6,13 @@
 // Include all component managers
 #include "../network/WiFiManager.h"
 #include "../network/MQTTManager.h"
-#include "../network/NetworkWatchdogManager.h"
+
 #include "../bluetooth/BLEManager.h"
 #include "../hardware/ServoController.h"
 #include "../hardware/SystemMonitor.h"
 #include "../hardware/FreeRTOSManager.h"
 #include "../hardware/I2CManager.h"
-#include "../health/SystemHealthManager.h"
+// SystemHealthManager removed - using SystemMonitor instead
 #include "../analytics/SessionAnalyticsManager.h"
 #include "../sensors/PulseMonitorManager.h"
 #include "../utils/TimeManager.h"
@@ -33,8 +33,13 @@ class DeviceManager {
 public:
     // Lifecycle management
     void initialize();
-    void update();
+    void update();  // Legacy - will be replaced by FreeRTOS task
     void shutdown();
+
+    // FreeRTOS Task Management
+    void startTask();
+    void stopTask();
+    bool isTaskRunning();
 
     // State management
     DeviceState getState();
@@ -44,11 +49,11 @@ public:
     // Component access
     WiFiManager& getWiFiManager();
     MQTTManager& getMQTTManager();
-    NetworkWatchdogManager& getNetworkWatchdogManager();
+
     BLEManager& getBLEManager();
     ServoController& getServoController();
     SystemMonitor& getSystemMonitor();
-    SystemHealthManager& getSystemHealthManager();
+    // SystemHealthManager removed - using SystemMonitor instead
     SessionAnalyticsManager& getSessionAnalyticsManager();
     PulseMonitorManager& getPulseMonitorManager();
     CommandProcessor& getCommandProcessor();
@@ -65,6 +70,7 @@ public:
     // Status reporting
     void publishSystemStatus();
     void logSystemSummary();
+    void logComponentStatus();
 
     // Configuration
     void setStatusReportInterval(unsigned long interval);
@@ -77,11 +83,11 @@ private:
     // Component instances
     WiFiManager wifiManager;
     MQTTManager mqttManager;
-    NetworkWatchdogManager networkWatchdogManager;
+
     BLEManager bleManager;
     ServoController servoController;
     SystemMonitor systemMonitor;
-    SystemHealthManager systemHealthManager;
+    // SystemHealthManager removed - using SystemMonitor instead
     SessionAnalyticsManager sessionAnalyticsManager;
     PulseMonitorManager pulseMonitorManager;
     CommandProcessor commandProcessor;
@@ -98,6 +104,11 @@ private:
     unsigned long loopStartTime;
     unsigned long totalLoopTime;
     unsigned long loopCount;
+
+    // FreeRTOS Task Management
+    TaskHandle_t taskHandle;
+    bool taskRunning;
+    static void deviceManagerTask(void* parameter);
 
     // Callbacks
     void (*stateChangeCallback)(DeviceState oldState, DeviceState newState);
@@ -147,7 +158,6 @@ private:
 
     // Logging and diagnostics
     void logPerformanceMetrics();
-    void logComponentStatus();
 
     // Static instance for callbacks
     static DeviceManager* instance;

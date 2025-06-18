@@ -112,7 +112,7 @@ bool TimeManager::attemptNTPSync() {
             return true;
         }
         
-        delay(delayMs);
+        vTaskDelay(pdMS_TO_TICKS(delayMs));  // FreeRTOS delay
         
         if (attempt % 5 == 0) {
             Logger::debugf("NTP sync attempt %d/%d", attempt + 1, maxAttempts);

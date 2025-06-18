@@ -3,6 +3,7 @@
 #include "../utils/Logger.h"
 #include "../utils/ErrorHandler.h"
 #include "../utils/TimeManager.h"
+#include "../hardware/FreeRTOSManager.h"
 
 void WiFiManager::initialize() {
     if (initialized) return;
@@ -344,8 +345,8 @@ void WiFiManager::wifiManagerTask(void* parameter) {
             }
         }
 
-        // Feed watchdog (when FreeRTOS Manager is re-enabled)
-        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+        // Feed watchdog - now that FreeRTOS Manager is re-enabled
+        FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
 
         // Task runs every 1 second instead of continuous polling
         vTaskDelay(pdMS_TO_TICKS(1000));

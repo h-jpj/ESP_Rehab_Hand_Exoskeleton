@@ -13,7 +13,7 @@ void setup() {
     // Initialize serial communication
     Serial.begin(SERIAL_BAUD_RATE);
     while (!Serial && millis() < 3000) {
-        delay(10);  // Wait up to 3 seconds for serial
+        vTaskDelay(pdMS_TO_TICKS(10));  // FreeRTOS delay
     }
 
     // Initialize logger first
@@ -42,49 +42,41 @@ void setup() {
 }
 
 void loop() {
-    unsigned long loopStart = millis();
+    // ✅ PURE FREERTOS ARCHITECTURE
+    // Main loop is now minimal - all work done by FreeRTOS tasks:
+    // - DeviceManager Task (Core 1, Priority 3) - System coordination
+    // - WiFiManager Task (Core 0, Priority 5) - Network connectivity
+    // - MQTTManager Tasks (Core 0, Priority 4) - Data publishing
+    // - BLEManager Task (Core 0, Priority 3) - Mobile connectivity
+    // - ServoController Task (Core 1, Priority 6) - Movement control
+    // - I2CManager Task (Core 1, Priority 5) - Sensor communication
+    // - PulseMonitor Task (Core 1, Priority 4) - Health monitoring
+    // - SessionAnalytics Task (Core 1, Priority 2) - Data processing
 
-    // Update the device manager (handles all subsystem updates)
-    deviceManager.update();
-
-    // Handle any serial commands for debugging
+    // Handle serial debugging only (minimal for development)
     if (Serial.available()) {
         String command = Serial.readStringUntil('\n');
         command.trim();
 
         if (command.length() > 0) {
-            Logger::infof("Serial command received: %s", command.c_str());
+            Logger::infof("Serial debug: %s", command.c_str());
 
-            // Handle session testing commands
-            if (command == "session_info") {
-                SessionManager& sm = deviceManager.getSessionManager();
-                Logger::infof("=== SESSION INFO ===");
-                Logger::infof("Active: %s", sm.isSessionActive() ? "Yes" : "No");
-                if (sm.isSessionActive()) {
-                    Logger::infof("ID: %s", sm.getCurrentSessionId().c_str());
-                    Logger::infof("Type: %d", (int)sm.getCurrentType());
-                    SessionStats stats = sm.getSessionStats();
-                    Logger::infof("Duration: %lu ms", stats.duration);
-                    Logger::infof("Movements: %d/%d", stats.successfulMovements, stats.totalMovements);
-                }
-                Logger::infof("==================");
-            } else if (command == "start_session") {
-                deviceManager.getSessionManager().startSession(false);
-            } else if (command == "end_session") {
-                deviceManager.getSessionManager().endSession("manual_test");
+            // Debug commands - real work done by tasks
+            if (command == "status") {
+                deviceManager.logComponentStatus();
+            } else if (command == "freertos") {
+                deviceManager.logFreeRTOSStatus();
+            } else if (command == "tasks") {
+                Logger::infof("FreeRTOS Tasks: %u", uxTaskGetNumberOfTasks());
+                Logger::infof("Free Heap: %u bytes", ESP.getFreeHeap());
+                Logger::infof("Min Free Heap: %u bytes", ESP.getMinFreeHeap());
             } else {
-                // Pass other commands to device manager
+                // Pass to DeviceManager task for processing
                 deviceManager.handleCommand(command, CommandSource::SERIAL_PORT);
             }
         }
     }
 
-    // Small delay to prevent overwhelming the system
-    delay(10);
-
-    // Track loop performance (optional - can be removed for production)
-    unsigned long loopTime = millis() - loopStart;
-    if (loopTime > 50) {  // Log if loop takes more than 50ms
-        Logger::warningf("Long loop detected: %lu ms", loopTime);
-    }
+    // FreeRTOS scheduler handles everything - main loop just sleeps
+    vTaskDelay(pdMS_TO_TICKS(1000));  // 1 second - FreeRTOS delay
 }

@@ -17,7 +17,7 @@ servo-controller/dist/
 servo-controller/web-build/
 servo-controller/package-lock.json
 
-# Logs
+# Logs and troubleshooting
 *.log
 npm-debug.log*
 yarn-debug.log*

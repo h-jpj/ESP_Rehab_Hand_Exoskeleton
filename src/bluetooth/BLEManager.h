@@ -50,6 +50,13 @@ public:
     // Connection callbacks
     void setConnectionCallback(void (*callback)(bool connected));
     void setCommandCallback(void (*callback)(const String& command));
+
+    // Testing and debugging
+    void sendTestNotification(const String& message);
+    void simulateCommand(const String& command);
+
+    // Command processing
+    String decodeBase64Command(const String& encodedCommand);
     
     // Statistics
     unsigned long getConnectionTime();

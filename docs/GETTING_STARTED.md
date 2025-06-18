@@ -79,7 +79,7 @@ Phase 2: Initializing Communication...
 WiFi Manager task started on Core 0
 MQTT Publisher and Subscriber tasks started on Core 0
 BLE Server task started on Core 0
-Network Watchdog task started on Core 0
+
 Communication initialization complete
 
 Phase 3: Initializing Hardware...
@@ -95,8 +95,8 @@ Heart Rate task started on Core 1
 Application initialization complete
 
 === FreeRTOS System Ready ===
-Architecture: Dual-core multitasking (8 active tasks)
-Core 0: WiFi, MQTT, BLE, Network Watchdog
+Architecture: Dual-core multitasking (7 active tasks)
+Core 0: WiFi, MQTT, BLE
 Core 1: Servo Control, I2C, Health, Analytics, Heart Rate
 Available interfaces: BLE, WiFi/MQTT
 Real-time analytics: ENABLED

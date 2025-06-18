@@ -106,12 +106,12 @@ Demonstrates:
 ║  ├─ Mobile app connectivity         │  ├─ Background health monitoring      ║
 ║  └─ 10Hz connection management      │  └─ 5 second health checks            ║
 ║                                      │                                        ║
-║  Priority 2: Network Watchdog Task  │  Priority 3: Heart Rate Task          ║
-║  ├─ 2KB Stack                       │  ├─ 4KB Stack                         ║
-║  ├─ Network monitoring & recovery   │  ├─ GY-MAX30102 sensor management    ║
-║  └─ 10 second monitoring cycle      │  └─ Real-time biometric monitoring    ║
+║  [Future Expansion Space]           │  Priority 3: Heart Rate Task          ║
+║  ├─ Additional protocol tasks       │  ├─ 4KB Stack                         ║
+║  └─ Available for new features      │  ├─ GY-MAX30102 sensor management    ║
+║                                      │  └─ Real-time biometric monitoring    ║
 ║                                      │                                        ║
-║  TOTAL: 24KB Stack (96KB RAM)       │  TOTAL: 18KB Stack (72KB RAM)         ║
+║  TOTAL: 22KB Stack (88KB RAM)       │  TOTAL: 18KB Stack (72KB RAM)         ║
 ╚══════════════════════════════════════════════════════════════════════════════╝
 ```
 
@@ -129,10 +129,9 @@ src/
 ├── main.cpp                    # Main application entry point
 ├── config/Config.h             # Centralized configuration
 ├── utils/                      # Logging, time sync, error handling
-├── network/                    # WiFi, MQTT, and Network Watchdog management
+├── network/                    # WiFi and MQTT management
 │   ├── WiFiManager             # Dedicated WiFi task (Core 0, Priority 5)
-│   ├── MQTTManager             # Publisher/Subscriber tasks (Core 0, Priority 4)
-│   └── NetworkWatchdogManager  # Network monitoring task (Core 0, Priority 2)
+│   └── MQTTManager             # Publisher/Subscriber tasks (Core 0, Priority 4)
 ├── bluetooth/BLEManager        # BLE server task (Core 0, Priority 3)
 ├── hardware/                   # Hardware control and monitoring
 │   ├── ServoController         # Servo control task (Core 1, Priority 6)
@@ -335,7 +334,7 @@ cd ESP32-Rehab-Hand-Exoskeleton
    WiFi Manager task started on Core 0
    MQTT Publisher and Subscriber tasks started on Core 0
    BLE Server task started on Core 0
-   Network Watchdog task started on Core 0
+
    Communication initialization complete
 
    Phase 3: Initializing Hardware...
@@ -352,7 +351,8 @@ cd ESP32-Rehab-Hand-Exoskeleton
 
    === FreeRTOS System Ready ===
    Architecture: Dual-core multitasking (7 active tasks)
-   Core 0: WiFi, MQTT, BLE, Network Watchdog
+   Core 0: WiFi, MQTT, BLE
+   FreeRTOS Manager: ENABLED (Memory-optimized for BLE compatibility)
    Core 1: Servo Control, I2C, Health, Analytics
    Available interfaces: BLE, WiFi/MQTT
    Real-time analytics: ENABLED
@@ -363,7 +363,7 @@ cd ESP32-Rehab-Hand-Exoskeleton
    WiFi Manager: Connected (Task: Running)
    MQTT Manager: Connected (Tasks: Running)
    BLE Manager: Advertising (Task: Running)
-   Network Watchdog Manager: Healthy (Task: Running)
+
    Servo Controller: Ready
    System Health Manager: Healthy (Task: Running)
    Session Analytics Manager: Ready (Task: Running)
@@ -479,6 +479,18 @@ Complete backend infrastructure for data logging and monitoring:
 
 ## 📖 Documentation
 
+### **📁 Core Documentation**
+- [Getting Started Guide](docs/GETTING_STARTED.md) - Quick setup and installation
+- [Hardware Setup Guide](docs/HARDWARE_SETUP.md) - Wiring and component assembly
+- [Project Structure](docs/PROJECT_STRUCTURE.md) - Code organization and architecture
+
+### **🔧 Technical Documentation**
+- [FreeRTOS Architecture](docs/FREERTOS_ARCHITECTURE_COMPLETE.md) - Complete system architecture
+- [Troubleshooting Log](docs/TROUBLESHOOTING_LOG.md) - Development issues and solutions
+- [Changelog](docs/CHANGELOG.md) - Version history and updates
+
+### **📝 Additional Resources**
+- [Blog Post: FreeRTOS Biometrics](docs/blog_post_freertos_biometrics.md) - Technical deep dive
 - [Server Setup Guide](SERVER_SETUP.md) - MQTT broker and database infrastructure
 - [Database Queries](DATABASE_QUERIES.md) - Complete reference for all queries and configurations
 

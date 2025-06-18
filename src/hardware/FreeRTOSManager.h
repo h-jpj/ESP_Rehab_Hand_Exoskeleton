@@ -115,6 +115,16 @@ public:
     static SemaphoreHandle_t getEmergencyStop();
     static SemaphoreHandle_t getCalibrationComplete();
 
+    // Semaphore Management Helper Methods
+    static bool takeI2CBusMutex(TickType_t timeout = portMAX_DELAY);
+    static void giveI2CBusMutex();
+    static bool takeServoControlMutex(TickType_t timeout = portMAX_DELAY);
+    static void giveServoControlMutex();
+    static bool takeSessionDataMutex(TickType_t timeout = portMAX_DELAY);
+    static void giveSessionDataMutex();
+    static bool takeConfigMutex(TickType_t timeout = portMAX_DELAY);
+    static void giveConfigMutex();
+
     // Event Group Access Methods
     static EventGroupHandle_t getSensorStatusEvents();
     static EventGroupHandle_t getSystemStateEvents();
@@ -124,7 +134,7 @@ public:
     static TaskHandle_t getMQTTPublisherTask();
     static TaskHandle_t getMQTTSubscriberTask();
     static TaskHandle_t getBLEServerTask();
-    static TaskHandle_t getNetworkWatchdogTask();
+
     static TaskHandle_t getServoControlTask();
     static TaskHandle_t getI2CManagerTask();
     static TaskHandle_t getPulseMonitorTask();
@@ -133,6 +143,16 @@ public:
     static TaskHandle_t getDataFusionTask();
     static TaskHandle_t getSessionAnalyticsTask();
     static TaskHandle_t getSystemHealthTask();
+
+    // Task Handle Registration Methods (for external task creation)
+    static void setServoControlTask(TaskHandle_t task);
+    static void setI2CManagerTask(TaskHandle_t task);
+    static void setPulseMonitorTask(TaskHandle_t task);
+    static void setMotionSensorTask(TaskHandle_t task);
+    static void setPressureSensorTask(TaskHandle_t task);
+    static void setDataFusionTask(TaskHandle_t task);
+    static void setSessionAnalyticsTask(TaskHandle_t task);
+    static void setSystemHealthTask(TaskHandle_t task);
 
     // Performance Monitoring
     static void recordTaskPerformance(TaskHandle_t task, uint32_t executionTime);
@@ -200,7 +220,7 @@ private:
     static TaskHandle_t mqttPublisherTask;
     static TaskHandle_t mqttSubscriberTask;
     static TaskHandle_t bleServerTask;
-    static TaskHandle_t networkWatchdogTask;
+
     static TaskHandle_t servoControlTask;
     static TaskHandle_t i2cManagerTask;
     static TaskHandle_t pulseMonitorTask;

@@ -135,9 +135,13 @@ private:
     int previousServoAngles[3];
     bool hasNewMetrics;
 
-    // Task management
-    TaskHandle_t servoTaskHandle;
+    // Task management (now integrated with FreeRTOS Manager)
+    TaskHandle_t servoTaskHandle;  // Will be set by FreeRTOS Manager
     static void servoTask(void* parameter);
+
+    // FreeRTOS Manager integration
+    bool createTaskThroughManager();
+    void destroyTaskThroughManager();
 
     // Callbacks
     void (*movementCompleteCallback)(ServoState state, int cycles);

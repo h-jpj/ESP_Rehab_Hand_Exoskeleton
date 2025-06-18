@@ -2,6 +2,7 @@
 #include "../config/Config.h"
 #include "../utils/Logger.h"
 #include "../utils/ErrorHandler.h"
+#include "FreeRTOSManager.h"
 
 void ServoController::initialize() {
     if (initialized) return;
@@ -52,19 +53,9 @@ void ServoController::initialize() {
             Logger::infof("Servo %d attached to pin %d (channel %d)", i, SERVO_PINS[i], channel);
         }
 
-        // Create servo task on Application CPU (Core 1) with high priority
-        xTaskCreatePinnedToCore(
-            servoTask,
-            "ServoTask",
-            TASK_STACK_SIZE,
-            this,
-            TASK_PRIORITY,
-            &servoTaskHandle,
-            1  // Pin to Core 1 for real-time control
-        );
-
-        if (servoTaskHandle == nullptr) {
-            Logger::error("Failed to create servo task");
+        // Create servo task through FreeRTOS Manager for proper coordination
+        if (!createTaskThroughManager()) {
+            Logger::error("Failed to create servo task through FreeRTOS Manager");
             REPORT_ERROR(ErrorCode::SERVO_INITIALIZATION_FAILED, "Task creation failed");
             return;
         }
@@ -99,11 +90,8 @@ void ServoController::shutdown() {
 
     stopAllMovement();
 
-    // Delete task
-    if (servoTaskHandle != nullptr) {
-        vTaskDelete(servoTaskHandle);
-        servoTaskHandle = nullptr;
-    }
+    // Delete task through FreeRTOS Manager
+    destroyTaskThroughManager();
 
     // Detach servos
     for (int i = 0; i < SERVO_COUNT; i++) {
@@ -195,9 +183,11 @@ void ServoController::executeSequentialMovement() {
     movementStartTime = millis();
     movementCount++;
 
-    // Notify task to start movement
+    // Notify task to start movement using FreeRTOS Manager coordination
     if (servoTaskHandle != nullptr) {
+        // Notify servo task to start movement
         xTaskNotifyGive(servoTaskHandle);
+        Logger::debug("Servo task notified for sequential movement");
     }
 }
 
@@ -214,9 +204,11 @@ void ServoController::executeSimultaneousMovement() {
     movementStartTime = millis();
     movementCount++;
 
-    // Notify task to start movement
+    // Notify task to start movement using FreeRTOS Manager coordination
     if (servoTaskHandle != nullptr) {
+        // Notify servo task to start movement
         xTaskNotifyGive(servoTaskHandle);
+        Logger::debug("Servo task notified for simultaneous movement");
     }
 }
 
@@ -329,21 +321,83 @@ int ServoController::getMovementCount() {
     return movementCount;
 }
 
+// =============================================================================
+// FREERTOS MANAGER INTEGRATION
+// =============================================================================
+
+bool ServoController::createTaskThroughManager() {
+    Logger::info("Creating servo task through FreeRTOS Manager...");
+
+    // Ensure FreeRTOS Manager is initialized
+    if (!FreeRTOSManager::isInitialized()) {
+        Logger::error("FreeRTOS Manager not initialized - cannot create servo task");
+        return false;
+    }
+
+    // Create task with FreeRTOS Manager coordination
+    BaseType_t result = xTaskCreatePinnedToCore(
+        servoTask,
+        "ServoControl",  // Use consistent naming with FreeRTOS Manager
+        TASK_STACK_SERVO_CONTROL,  // Use FreeRTOS Manager stack size
+        this,
+        PRIORITY_SERVO_CONTROL,    // Use FreeRTOS Manager priority
+        &servoTaskHandle,
+        CORE_APPLICATION  // Core 1 for application tasks
+    );
+
+    if (result != pdPASS) {
+        Logger::error("Failed to create servo task");
+        return false;
+    }
+
+    // Register task with FreeRTOS Manager
+    FreeRTOSManager::setServoControlTask(servoTaskHandle);
+
+    Logger::infof("Servo task created successfully with handle: %p", servoTaskHandle);
+    return true;
+}
+
+void ServoController::destroyTaskThroughManager() {
+    if (servoTaskHandle != nullptr) {
+        Logger::info("Destroying servo task through FreeRTOS Manager...");
+
+        // Unregister from FreeRTOS Manager
+        FreeRTOSManager::setServoControlTask(nullptr);
+
+        // Delete the task
+        vTaskDelete(servoTaskHandle);
+        servoTaskHandle = nullptr;
+
+        Logger::info("Servo task destroyed successfully");
+    }
+}
+
 // Static task function
 void ServoController::servoTask(void* parameter) {
     ServoController* controller = static_cast<ServoController*>(parameter);
 
-    Logger::info("Servo task started");
+    Logger::info("Servo task started with FreeRTOS Manager coordination");
 
     while (true) {
         // Wait for notification to start movement
         ulTaskNotifyTake(pdTRUE, portMAX_DELAY);
 
+        Logger::debug("Servo task received movement notification");
+
+        // Perform movement based on type
         if (controller->currentMovementType == MovementType::SEQUENTIAL) {
+            Logger::debug("Executing sequential movement cycles");
             controller->performSequentialCycles();
         } else if (controller->currentMovementType == MovementType::SIMULTANEOUS) {
+            Logger::debug("Executing simultaneous movement cycles");
             controller->performSimultaneousCycles();
         }
+
+        // Movement completed successfully
+        Logger::debug("Servo movement cycles completed");
+
+        // Feed watchdog to indicate task is healthy
+        FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
 
         // Movement complete
         controller->movementInProgress = false;
@@ -388,6 +442,12 @@ void ServoController::performSequentialCycles() {
     }
 
     Logger::infof("Sequential movement finished (%d cycles completed)", currentCycle - 1);
+
+    // Mark movement as complete and reset state
+    movementInProgress = false;
+    setState(ServoState::IDLE);
+
+    // Sequential movement completed - state reset handled by servo task
 }
 
 void ServoController::performSimultaneousCycles() {
@@ -398,14 +458,20 @@ void ServoController::performSimultaneousCycles() {
 
         if (!movementInProgress) break;  // Check for stop condition
 
-        // Move all servos together
+        // Move all servos together - FreeRTOS style
         moveAllServosTo(maxAngle, movementDelayMs);
-        delay(movementDelayMs);
+        vTaskDelay(pdMS_TO_TICKS(movementDelayMs));  // FreeRTOS delay
         moveAllServosTo(minAngle, movementDelayMs);
-        delay(movementDelayMs);
+        vTaskDelay(pdMS_TO_TICKS(movementDelayMs));  // FreeRTOS delay
     }
 
     Logger::infof("Simultaneous movement finished (%d cycles completed)", currentCycle - 1);
+
+    // Mark movement as complete and reset state
+    movementInProgress = false;
+    setState(ServoState::IDLE);
+
+    // Simultaneous movement completed - state reset handled by servo task
 }
 
 void ServoController::moveServoSmoothly(int servoIndex, int targetAngle, int delayMs) {
@@ -423,8 +489,8 @@ void ServoController::moveServoSmoothly(int servoIndex, int targetAngle, int del
 
     Logger::debugf("Servo %d moving to %d degrees", servoIndex, targetAngle);
 
-    // Wait for movement to complete (simplified - actual servo movement time)
-    delay(delayMs);
+    // Wait for movement to complete - FreeRTOS style
+    vTaskDelay(pdMS_TO_TICKS(delayMs));
 
     // Calculate movement metrics
     unsigned long duration = millis() - startTime;

@@ -136,8 +136,8 @@ private:
     static const size_t DEFAULT_MEMORY_THRESHOLD = 10000;  // 10KB
     static const unsigned long DEFAULT_LOOP_TIME_THRESHOLD = 100;  // 100ms
     static const unsigned long DEFAULT_STATUS_INTERVAL = 60000;  // 1 minute
-    static constexpr float MEMORY_WARNING_PERCENT = 80.0f;
-    static constexpr float MEMORY_CRITICAL_PERCENT = 90.0f;
+    static constexpr float MEMORY_WARNING_PERCENT = 90.0f;   // Aligned with SystemHealthManager
+    static constexpr float MEMORY_CRITICAL_PERCENT = 95.0f;  // Aligned with SystemHealthManager
 };
 
 #endif

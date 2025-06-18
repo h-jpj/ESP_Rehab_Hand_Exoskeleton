@@ -22,6 +22,8 @@ void DeviceManager::initialize() {
     totalLoopTime = 0;
     loopCount = 0;
     stateChangeCallback = nullptr;
+    taskHandle = nullptr;
+    taskRunning = false;
 
     // Initialize in phases
     if (!initializeFoundation()) {
@@ -46,6 +48,9 @@ void DeviceManager::initialize() {
     setState(DeviceState::READY);
 
     Logger::info("Device ready for BLE commands (WiFi/MQTT optional)");
+
+    // Start the DeviceManager coordination task
+    startTask();
 
     Logger::info("=== Device Manager Initialization Complete ===");
     logSystemSummary();
@@ -132,9 +137,7 @@ MQTTManager& DeviceManager::getMQTTManager() {
     return mqttManager;
 }
 
-NetworkWatchdogManager& DeviceManager::getNetworkWatchdogManager() {
-    return networkWatchdogManager;
-}
+
 
 BLEManager& DeviceManager::getBLEManager() {
     return bleManager;
@@ -148,9 +151,7 @@ SystemMonitor& DeviceManager::getSystemMonitor() {
     return systemMonitor;
 }
 
-SystemHealthManager& DeviceManager::getSystemHealthManager() {
-    return systemHealthManager;
-}
+// SystemHealthManager removed - using SystemMonitor instead
 
 SessionAnalyticsManager& DeviceManager::getSessionAnalyticsManager() {
     return sessionAnalyticsManager;
@@ -169,6 +170,9 @@ SessionManager& DeviceManager::getSessionManager() {
 }
 
 bool DeviceManager::handleCommand(const String& command, CommandSource source) {
+    Logger::infof("DeviceManager::handleCommand called - Command: '%s', Source: %d, State: %d",
+                 command.c_str(), (int)source, (int)currentState);
+
     // Allow BLE commands even if WiFi/MQTT not ready, but require basic initialization
     if (currentState == DeviceState::INITIALIZING) {
         Logger::warning("Device still initializing - command ignored");
@@ -176,7 +180,29 @@ bool DeviceManager::handleCommand(const String& command, CommandSource source) {
     }
 
     if (currentState == DeviceState::ERROR) {
-        Logger::warning("Device in error state - command ignored");
+        // Allow RESET command even in error state for recovery
+        String trimmedCommand = command;
+        trimmedCommand.trim();
+
+        if (trimmedCommand.equalsIgnoreCase("RESET") || trimmedCommand.equalsIgnoreCase("RECOVER")) {
+            Logger::info("Recovery command received - attempting to exit error state");
+
+            // Clear any critical errors that might be stuck
+            ErrorHandler::clearErrors();
+            Logger::info("Cleared error handler");
+
+            // Force health check
+            bool systemMonitorHealthy = systemMonitor.isSystemHealthy();
+            bool errorHandlerHealthy = !ErrorHandler::hasCriticalErrors();
+            Logger::infof("Post-reset health: SystemMonitor=%s, ErrorHandler=%s",
+                         systemMonitorHealthy ? "OK" : "FAIL",
+                         errorHandlerHealthy ? "OK" : "FAIL");
+
+            setState(DeviceState::READY);
+            return true;
+        }
+
+        Logger::warning("Device in error state - command ignored (send 'RESET' to recover)");
         return false;
     }
 
@@ -185,7 +211,10 @@ bool DeviceManager::handleCommand(const String& command, CommandSource source) {
                  command.c_str());
 
     // Parse and validate command
+    Logger::info("Parsing command...");
     Command cmd = commandProcessor.parseCommand(command, source);
+    Logger::infof("Command parsed - Valid: %s, Type: %d, Code: %d",
+                 cmd.isValid ? "YES" : "NO", (int)cmd.type, cmd.commandCode);
 
     if (!cmd.isValid) {
         Logger::warningf("Invalid command: %s", command.c_str());
@@ -289,49 +318,59 @@ void DeviceManager::setStateChangeCallback(void (*callback)(DeviceState oldState
 bool DeviceManager::initializeFoundation() {
     Logger::info("Phase 1: Initializing Foundation...");
 
-    // TODO: Temporarily disable FreeRTOS Manager to fix BLE connectivity
-    // Will re-enable when implementing sensors in Phase 2
-    /*
     // Initialize FreeRTOS infrastructure first
+    Logger::info("Initializing FreeRTOS Manager with memory optimization...");
     if (!FreeRTOSManager::initialize()) {
         Logger::error("Failed to initialize FreeRTOS Manager");
         return false;
     }
 
     // Initialize I2C Manager for sensor communication
+    Logger::info("Initializing I2C Manager...");
     if (!I2CManager::initialize()) {
         Logger::error("Failed to initialize I2C Manager");
         return false;
     }
-    */
 
     // Initialize core utilities
     TimeManager::initialize();
     ErrorHandler::initialize();
 
     Logger::info("Foundation initialization complete");
-    // logFreeRTOSStatus();  // Disabled until FreeRTOS Manager is re-enabled
+    logFreeRTOSStatus();  // Re-enabled with FreeRTOS Manager
     return true;
 }
 
 bool DeviceManager::initializeCommunication() {
     Logger::info("Phase 2: Initializing Communication...");
 
+    // CRITICAL: Check heap before communication initialization
+    size_t heapBefore = ESP.getFreeHeap();
+    Logger::infof("Free heap before communication init: %u bytes", heapBefore);
+
     // Initialize WiFi
+    Logger::info("Initializing WiFi Manager...");
     wifiManager.initialize();
     wifiManager.setConnectionCallback(onWiFiConnectionChange);
 
     // Initialize MQTT
+    Logger::info("Initializing MQTT Manager...");
     mqttManager.initialize();
     mqttManager.setConnectionCallback(onMQTTConnectionChange);
 
-    // Initialize BLE
+    // CRITICAL: Initialize BLE with Static Memory (must be last for optimal memory layout)
+    Logger::info("Initializing BLE Manager with Static Memory...");
+    size_t heapBeforeBLE = ESP.getFreeHeap();
+    Logger::infof("Free heap before BLE init: %u bytes", heapBeforeBLE);
+
     bleManager.initialize();
     bleManager.setConnectionCallback(onBLEConnectionChange);
     bleManager.setCommandCallback(onBLECommandReceived);
 
-    // Initialize Network Watchdog - Temporarily disabled due to stack overflow
-    // networkWatchdogManager.initialize();
+    // Verify BLE static memory health after initialization
+    size_t heapAfterBLE = ESP.getFreeHeap();
+    Logger::infof("Free heap after BLE init: %u bytes", heapAfterBLE);
+    Logger::infof("Heap used by BLE: %u bytes", heapBeforeBLE - heapAfterBLE);
 
     Logger::info("Communication initialization complete");
     return true;
@@ -349,8 +388,7 @@ bool DeviceManager::initializeHardware() {
     systemMonitor.setAlertCallback(onSystemAlert);
     systemMonitor.setStatusReportInterval(statusReportInterval);
 
-    // Initialize system health manager
-    systemHealthManager.initialize();
+    // SystemHealthManager removed - using SystemMonitor instead
 
     Logger::info("Hardware initialization complete");
     return true;
@@ -393,13 +431,13 @@ void DeviceManager::updateCommunication() {
 }
 
 void DeviceManager::updateHardware() {
-    servoController.update();
+    // ServoController now runs in its own FreeRTOS task
+    // servoController.update();  // Removed - handled by servoTask
 }
 
 void DeviceManager::updateApplication() {
-    // Update command processor and handle any pending commands
-    // Update session manager
-    sessionManager.update();
+    // SessionManager now runs in its own FreeRTOS task (if needed)
+    // sessionManager.update();  // Removed - minimal timeout checking can be event-driven
 
     // Check for new servo analytics and publish them
     if (servoController.hasNewAnalytics()) {
@@ -409,12 +447,13 @@ void DeviceManager::updateApplication() {
 }
 
 void DeviceManager::updateMonitoring() {
-    systemMonitor.update();
+    // SystemMonitor now event-driven - no polling needed
+    // systemMonitor.update();  // Removed - monitoring is now task-based
 
-    // Record loop performance for system health monitoring
+    // Record loop performance for system monitoring
     unsigned long currentTime = millis();
     unsigned long currentLoopTime = currentTime - loopStartTime;
-    systemHealthManager.recordLoopTime(currentLoopTime);
+    systemMonitor.recordLoopTime(currentLoopTime);
 
     // Update performance tracking
     totalLoopTime += currentLoopTime;
@@ -494,13 +533,43 @@ void DeviceManager::setState(DeviceState newState) {
 }
 
 void DeviceManager::checkSystemHealth() {
-    if (!isHealthy()) {
+    // Detailed health analysis for debugging
+    bool systemMonitorHealthy = systemMonitor.isSystemHealthy();
+    bool errorHandlerHealthy = !ErrorHandler::hasCriticalErrors();
+    bool overallHealthy = systemMonitorHealthy && errorHandlerHealthy;
+
+    // Log detailed health status for debugging
+    static unsigned long lastDetailedLog = 0;
+    if (millis() - lastDetailedLog > 15000) {  // Every 15 seconds
+        float memoryUsage = systemMonitor.getMemoryUsagePercent();
+        SystemHealth health = systemMonitor.assessSystemHealth();
+
+        Logger::infof("=== HEALTH DEBUG ===");
+        SystemMetrics metrics = systemMonitor.getSystemMetrics();
+        Logger::infof("Memory Usage: %.1f%% (%d/%d bytes)",
+                     memoryUsage,
+                     metrics.totalHeap - metrics.freeHeap,
+                     metrics.totalHeap);
+        Logger::infof("SystemMonitor Health: %s (Health Level: %d)",
+                     systemMonitorHealthy ? "HEALTHY" : "UNHEALTHY", (int)health);
+        Logger::infof("ErrorHandler Health: %s (Critical Errors: %s)",
+                     errorHandlerHealthy ? "HEALTHY" : "UNHEALTHY",
+                     ErrorHandler::hasCriticalErrors() ? "YES" : "NO");
+        Logger::infof("Overall Health: %s", overallHealthy ? "HEALTHY" : "UNHEALTHY");
+        Logger::infof("Current State: %d", (int)currentState);
+        Logger::infof("==================");
+        lastDetailedLog = millis();
+    }
+
+    if (!overallHealthy) {
         if (currentState != DeviceState::ERROR) {
-            Logger::warning("System health degraded");
+            Logger::warningf("System health degraded - entering error state (Monitor: %s, Errors: %s)",
+                           systemMonitorHealthy ? "OK" : "FAIL",
+                           errorHandlerHealthy ? "OK" : "FAIL");
             setState(DeviceState::ERROR);
         }
     } else if (currentState == DeviceState::ERROR) {
-        Logger::info("System health recovered");
+        Logger::info("System health recovered - returning to ready state");
         setState(DeviceState::READY);
     }
 }
@@ -527,15 +596,14 @@ void DeviceManager::publishConnectionStatus() {
 void DeviceManager::publishSystemHealthData() {
     if (!mqttManager.isConnected()) return;
 
-    // Get system health metrics
-    auto healthReport = systemHealthManager.getHealthReport();
-    // auto networkMetrics = networkWatchdogManager.getNetworkMetrics(); // Disabled
+    // Get system metrics from SystemMonitor
+    SystemMetrics metrics = systemMonitor.getSystemMetrics();
 
     // Publish system performance data
     bool success = mqttManager.publishPerformanceTiming(
-        systemHealthManager.getAverageLoopTime(),
-        systemHealthManager.getAverageLoopTime(),
-        systemHealthManager.getMaxLoopTime()
+        metrics.averageLoopTime,
+        metrics.averageLoopTime,
+        metrics.maxLoopTime
     );
 
     if (success) {
@@ -544,21 +612,16 @@ void DeviceManager::publishSystemHealthData() {
 
     // Publish memory usage data
     success = mqttManager.publishPerformanceMemory(
-        healthReport.memory.freeHeap,
-        healthReport.memory.minFreeHeap,
-        healthReport.memory.usagePercent
+        metrics.freeHeap,
+        metrics.minFreeHeap,
+        (float)((metrics.totalHeap - metrics.freeHeap) * 100.0 / metrics.totalHeap)
     );
 
     if (success) {
         Logger::debug("Published memory usage data");
     }
 
-    // Publish network health data if network watchdog has alerts - Disabled
-    // if (networkWatchdogManager.hasNewAlerts()) {
-    //     String alert = networkWatchdogManager.getLastAlert();
-    //     Logger::infof("Network Alert: %s", alert.c_str());
-    //     networkWatchdogManager.clearAlerts();
-    // }
+
 }
 
 void DeviceManager::publishServoAnalytics() {
@@ -669,8 +732,14 @@ void DeviceManager::onBLEConnectionChange(bool connected) {
 }
 
 void DeviceManager::onBLECommandReceived(const String& command) {
+    Logger::infof("DeviceManager::onBLECommandReceived called with: '%s'", command.c_str());
+
     if (instance) {
-        instance->handleCommand(command, CommandSource::BLE);
+        Logger::info("DeviceManager instance exists, calling handleCommand...");
+        bool result = instance->handleCommand(command, CommandSource::BLE);
+        Logger::infof("DeviceManager::handleCommand result: %s", result ? "SUCCESS" : "FAILED");
+    } else {
+        Logger::error("DeviceManager instance is null!");
     }
 }
 
@@ -684,6 +753,9 @@ void DeviceManager::onServoMovementComplete(ServoState state, int cycles) {
         if (instance->currentState == DeviceState::RUNNING) {
             instance->setState(DeviceState::READY);
         }
+
+        // Servo movement completed successfully
+        Logger::debug("Servo movement complete - no additional coordination needed");
     }
 }
 
@@ -828,17 +900,13 @@ void DeviceManager::logComponentStatus() {
     Logger::infof("MQTT Manager: %s (Tasks: %s)",
                  mqttManager.isConnected() ? "Connected" : "Disconnected",
                  mqttManager.areTasksRunning() ? "Running" : "Stopped");
-    // Logger::infof("Network Watchdog Manager: %s (Task: %s)",
-    //              networkWatchdogManager.isNetworkHealthy() ? "Healthy" : "Warning",
-    //              networkWatchdogManager.isTaskRunning() ? "Running" : "Stopped");
+
     Logger::infof("BLE Manager: %s (Task: %s)",
                  bleManager.isConnected() ? "Connected" : "Advertising",
                  bleManager.isTaskRunning() ? "Running" : "Stopped");
     Logger::infof("Servo Controller: %s", servoController.isBusy() ? "Busy" : "Ready");
     Logger::infof("System Monitor: %s", systemMonitor.isSystemHealthy() ? "Healthy" : "Warning");
-    Logger::infof("System Health Manager: %s (Task: %s)",
-                 systemHealthManager.isSystemHealthy() ? "Healthy" : "Warning",
-                 systemHealthManager.isTaskRunning() ? "Running" : "Stopped");
+    // SystemHealthManager removed - using SystemMonitor instead
     Logger::infof("Session Analytics Manager: %s (Task: %s)",
                  "Ready",
                  sessionAnalyticsManager.isTaskRunning() ? "Running" : "Stopped");
@@ -858,11 +926,16 @@ bool DeviceManager::isFreeRTOSReady() {
 
 void DeviceManager::logFreeRTOSStatus() {
     Logger::info("=== FreeRTOS System Status ===");
-    Logger::info("FreeRTOS Manager: Temporarily disabled to fix BLE connectivity");
-    Logger::info("Will be re-enabled in Phase 2 sensor implementation");
+    Logger::infof("FreeRTOS Manager: %s", FreeRTOSManager::isInitialized() ? "ENABLED" : "DISABLED");
     Logger::infof("Free Heap: %u bytes", ESP.getFreeHeap());
     Logger::infof("Min Free Heap: %u bytes", ESP.getMinFreeHeap());
     Logger::infof("Task Count: %u", uxTaskGetNumberOfTasks());
+
+    if (FreeRTOSManager::isInitialized()) {
+        Logger::info("Memory-optimized configuration active for BLE compatibility");
+        FreeRTOSManager::logSystemPerformance();
+    }
+
     Logger::info("=============================");
 
     /*
@@ -878,4 +951,59 @@ void DeviceManager::logFreeRTOSStatus() {
         FreeRTOSManager::logSystemPerformance();
     }
     */
+}
+
+// =============================================================================
+// FREERTOS TASK MANAGEMENT
+// =============================================================================
+
+void DeviceManager::startTask() {
+    if (taskRunning || taskHandle) return;
+
+    BaseType_t result = xTaskCreatePinnedToCore(
+        deviceManagerTask,
+        "DeviceManager",
+        4096,  // 4KB stack
+        this,
+        3,     // Priority 3 - coordination task
+        &taskHandle,
+        1      // Core 1 - Application CPU
+    );
+
+    if (result == pdPASS) {
+        taskRunning = true;
+        Logger::info("DeviceManager task started on Core 1");
+    } else {
+        Logger::error("Failed to create DeviceManager task");
+    }
+}
+
+void DeviceManager::stopTask() {
+    if (!taskRunning || !taskHandle) return;
+
+    taskRunning = false;
+    vTaskDelete(taskHandle);
+    taskHandle = nullptr;
+    Logger::info("DeviceManager task stopped");
+}
+
+bool DeviceManager::isTaskRunning() {
+    return taskRunning && taskHandle != nullptr;
+}
+
+void DeviceManager::deviceManagerTask(void* parameter) {
+    DeviceManager* manager = static_cast<DeviceManager*>(parameter);
+
+    Logger::info("DeviceManager task started");
+
+    while (manager->taskRunning) {
+        // Run the main update cycle in FreeRTOS task context
+        manager->update();
+
+        // Task runs at 10Hz (100ms cycle) - appropriate for coordination
+        vTaskDelay(pdMS_TO_TICKS(100));
+    }
+
+    Logger::info("DeviceManager task ended");
+    vTaskDelete(nullptr);
 }

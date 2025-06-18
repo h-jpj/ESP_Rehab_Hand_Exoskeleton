@@ -3,6 +3,7 @@
 #include "../utils/Logger.h"
 #include "../utils/ErrorHandler.h"
 #include "../utils/TimeManager.h"
+#include "../hardware/FreeRTOSManager.h"
 
 void MQTTManager::initialize() {
     if (initialized) return;
@@ -641,8 +642,8 @@ void MQTTManager::mqttPublisherTask(void* parameter) {
             // Currently using direct publishing through existing methods
         }
 
-        // Feed watchdog (when FreeRTOS Manager is re-enabled)
-        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+        // Feed watchdog - now that FreeRTOS Manager is re-enabled
+        FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
 
         // Publisher runs at 100Hz for responsive publishing
         vTaskDelay(pdMS_TO_TICKS(10));
@@ -677,8 +678,8 @@ void MQTTManager::mqttSubscriberTask(void* parameter) {
             }
         }
 
-        // Feed watchdog (when FreeRTOS Manager is re-enabled)
-        // FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
+        // Feed watchdog - now that FreeRTOS Manager is re-enabled
+        FreeRTOSManager::feedTaskWatchdog(xTaskGetCurrentTaskHandle());
 
         // Subscriber runs at 20Hz for connection management
         vTaskDelay(pdMS_TO_TICKS(50));

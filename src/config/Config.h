@@ -85,20 +85,20 @@ const int DEEP_SLEEP_DURATION = 60;  // seconds (for future use)
 // FREERTOS TASK CONFIGURATION
 // =============================================================================
 
-// Task Stack Sizes (in words, not bytes)
-const uint32_t TASK_STACK_WIFI_MANAGER = 4096;
-const uint32_t TASK_STACK_MQTT_PUBLISHER = 6144;
-const uint32_t TASK_STACK_MQTT_SUBSCRIBER = 4096;
-const uint32_t TASK_STACK_BLE_SERVER = 8192;
-const uint32_t TASK_STACK_NETWORK_WATCHDOG = 4096;
-const uint32_t TASK_STACK_SERVO_CONTROL = 4096;
-const uint32_t TASK_STACK_I2C_MANAGER = 4096;
-const uint32_t TASK_STACK_PULSE_MONITOR = 4096;
-const uint32_t TASK_STACK_MOTION_SENSOR = 4096;
-const uint32_t TASK_STACK_PRESSURE_SENSOR = 4096;
-const uint32_t TASK_STACK_DATA_FUSION = 5120;
-const uint32_t TASK_STACK_SESSION_ANALYTICS = 4096;
-const uint32_t TASK_STACK_SYSTEM_HEALTH = 4096;
+// Task Stack Sizes (in words, not bytes) - Optimized for memory efficiency
+const uint32_t TASK_STACK_WIFI_MANAGER = 3072;      // Reduced from 4096
+const uint32_t TASK_STACK_MQTT_PUBLISHER = 4096;    // Reduced from 6144
+const uint32_t TASK_STACK_MQTT_SUBSCRIBER = 3072;   // Reduced from 4096
+const uint32_t TASK_STACK_BLE_SERVER = 6144;        // Reduced from 8192 - Critical for BLE stability
+
+const uint32_t TASK_STACK_SERVO_CONTROL = 3072;     // Reduced from 4096
+const uint32_t TASK_STACK_I2C_MANAGER = 3072;       // Reduced from 4096
+const uint32_t TASK_STACK_PULSE_MONITOR = 3072;     // Reduced from 4096
+const uint32_t TASK_STACK_MOTION_SENSOR = 3072;     // Reduced from 4096
+const uint32_t TASK_STACK_PRESSURE_SENSOR = 2048;   // Reduced from 4096
+const uint32_t TASK_STACK_DATA_FUSION = 4096;       // Reduced from 5120
+const uint32_t TASK_STACK_SESSION_ANALYTICS = 3072; // Reduced from 4096
+const uint32_t TASK_STACK_SYSTEM_HEALTH = 4096;     // CRITICAL: Increased back - needs space for logging
 
 // Task Priorities (0 = lowest, configMAX_PRIORITIES-1 = highest)
 // Core 0 (Protocol CPU) - Communication Tasks
@@ -106,7 +106,7 @@ const UBaseType_t PRIORITY_WIFI_MANAGER = 5;
 const UBaseType_t PRIORITY_MQTT_PUBLISHER = 4;
 const UBaseType_t PRIORITY_MQTT_SUBSCRIBER = 4;
 const UBaseType_t PRIORITY_BLE_SERVER = 3;
-const UBaseType_t PRIORITY_NETWORK_WATCHDOG = 2;
+
 
 // Core 1 (Application CPU) - Control & Sensing Tasks
 const UBaseType_t PRIORITY_SERVO_CONTROL = 6;      // Highest - safety critical
@@ -122,22 +122,22 @@ const UBaseType_t PRIORITY_SYSTEM_HEALTH = 1;      // Background monitoring
 const BaseType_t CORE_PROTOCOL = 0;     // WiFi, MQTT, BLE
 const BaseType_t CORE_APPLICATION = 1;  // Sensors, Control, Analytics
 
-// Queue Sizes
-const UBaseType_t QUEUE_SIZE_PULSE_RAW = 100;        // 25Hz * 4 seconds
-const UBaseType_t QUEUE_SIZE_MOTION_RAW = 200;       // 100Hz * 2 seconds
-const UBaseType_t QUEUE_SIZE_PRESSURE_RAW = 50;      // 10Hz * 5 seconds
-const UBaseType_t QUEUE_SIZE_PULSE_PROCESSED = 20;   // 1Hz * 20 seconds
-const UBaseType_t QUEUE_SIZE_MOTION_PROCESSED = 50;  // 10Hz * 5 seconds
-const UBaseType_t QUEUE_SIZE_PRESSURE_PROCESSED = 10; // 1Hz * 10 seconds
-const UBaseType_t QUEUE_SIZE_SERVO_COMMANDS = 10;    // Movement commands
-const UBaseType_t QUEUE_SIZE_I2C_REQUESTS = 20;      // I2C bus requests
-const UBaseType_t QUEUE_SIZE_MQTT_PUBLISH = 50;      // MQTT messages
-const UBaseType_t QUEUE_SIZE_SESSION_EVENTS = 20;    // Session events
-const UBaseType_t QUEUE_SIZE_SYSTEM_ALERTS = 15;     // System alerts
-const UBaseType_t QUEUE_SIZE_FUSED_DATA = 30;        // Combined sensor data
-const UBaseType_t QUEUE_SIZE_MOVEMENT_ANALYTICS = 25; // Movement analysis
-const UBaseType_t QUEUE_SIZE_CLINICAL_DATA = 15;     // Clinical metrics
-const UBaseType_t QUEUE_SIZE_PERFORMANCE_METRICS = 20; // Performance data
+// Queue Sizes - Optimized for memory efficiency
+const UBaseType_t QUEUE_SIZE_PULSE_RAW = 50;         // Reduced: 25Hz * 2 seconds
+const UBaseType_t QUEUE_SIZE_MOTION_RAW = 100;       // Reduced: 100Hz * 1 second
+const UBaseType_t QUEUE_SIZE_PRESSURE_RAW = 25;      // Reduced: 10Hz * 2.5 seconds
+const UBaseType_t QUEUE_SIZE_PULSE_PROCESSED = 10;   // Reduced: 1Hz * 10 seconds
+const UBaseType_t QUEUE_SIZE_MOTION_PROCESSED = 25;  // Reduced: 10Hz * 2.5 seconds
+const UBaseType_t QUEUE_SIZE_PRESSURE_PROCESSED = 5; // Reduced: 1Hz * 5 seconds
+const UBaseType_t QUEUE_SIZE_SERVO_COMMANDS = 5;     // Reduced: Movement commands
+const UBaseType_t QUEUE_SIZE_I2C_REQUESTS = 10;      // Reduced: I2C bus requests
+const UBaseType_t QUEUE_SIZE_MQTT_PUBLISH = 25;      // Reduced: MQTT messages
+const UBaseType_t QUEUE_SIZE_SESSION_EVENTS = 10;    // Reduced: Session events
+const UBaseType_t QUEUE_SIZE_SYSTEM_ALERTS = 8;      // Reduced: System alerts
+const UBaseType_t QUEUE_SIZE_FUSED_DATA = 15;        // Reduced: Combined sensor data
+const UBaseType_t QUEUE_SIZE_MOVEMENT_ANALYTICS = 12; // Reduced: Movement analysis
+const UBaseType_t QUEUE_SIZE_CLINICAL_DATA = 8;      // Reduced: Clinical metrics
+const UBaseType_t QUEUE_SIZE_PERFORMANCE_METRICS = 10; // Reduced: Performance data
 
 // Sensor Sampling Configuration
 const uint32_t PULSE_SAMPLING_RATE_HZ = 25;          // 25Hz for heart rate
@@ -183,9 +183,9 @@ const TickType_t TASK_DELAY_PRESSURE_SAMPLING = pdMS_TO_TICKS(1000 / PRESSURE_SA
 const TickType_t TASK_DELAY_DATA_FUSION = pdMS_TO_TICKS(100);  // 10Hz fusion rate
 const TickType_t TASK_DELAY_SYSTEM_HEALTH = pdMS_TO_TICKS(5000); // 5 second health checks
 
-// Memory Management
-const size_t SENSOR_DATA_POOL_SIZE = 8192;   // 8KB pool for sensor data
-const size_t SENSOR_DATA_POOL_ITEMS = 64;    // Number of allocatable items
+// Memory Management - Optimized for BLE compatibility
+const size_t SENSOR_DATA_POOL_SIZE = 4096;   // Reduced to 4KB pool for sensor data
+const size_t SENSOR_DATA_POOL_ITEMS = 32;    // Reduced: Number of allocatable items
 const size_t MAX_MQTT_MESSAGE_SIZE = 1024;   // Maximum MQTT message size
 
 // Performance Monitoring

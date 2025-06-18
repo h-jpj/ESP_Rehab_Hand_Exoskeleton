@@ -59,35 +59,35 @@ GND          | GND         | Ground
 ESP32                    Servo Motors              Heart Rate Sensor
 ┌─────────────┐         ┌──────────┐              ┌─────────────┐
 │             │         │  Servo 1 │              │ GY-MAX30102 │
-│        GPIO19├─────────┤Signal    │              │             │
-│        GPIO21├─────────┼──────────┼──────────────┤SCL          │
-│        GPIO18├─────────┼──────────┼──────────────┤SDA          │
-│         GPIO4├─────────┼──────────┼──────────────┤INT          │
+│        GPIO19├────────┤Signal    │              │             │
+│        GPIO21├────────┼──────────┼──────────────┤SCL          │
+│        GPIO18├────────┼──────────┼──────────────┤SDA          │
+│         GPIO4├────────┼──────────┼──────────────┤INT          │
 │             │         │Power ────┤              │VCC ─────────┤
 │             │         │GND   ────┤              │GND ─────────┤
 │             │         └──────────┘              └─────────────┘
 │             │
-│        GPIO22├─────────┐ ┌──────────┐
+│        GPIO22├─────────┐┌──────────┐
 │             │         └─┤  Servo 2 │
 │             │           │Signal    │
 │             │           │Power ────┤
 │             │           │GND   ────┤
 │             │           └──────────┘
 │             │
-│        GPIO23├─────────┐ ┌──────────┐
+│        GPIO23├─────────┐┌──────────┐
 │             │         └─┤  Servo 3 │
 │             │           │Signal    │
 │             │           │Power ────┤
 │             │           │GND   ────┤
 │             │           └──────────┘
 │             │
-│           Vin├───────────┴─────────── +5V Power Rail (Servos)
+│           Vin├──────────┴─────────── +5V Power Rail (Servos)
 │          3.3V├─────────────────────── +3.3V Power Rail (Sensor)
-│           GND├───────────┬─────────── Ground Rail (All Components)
+│           GND├──────────┬─────────── Ground Rail (All Components)
 │             │           │
-│        USB-C │           │ (Connect all power and ground
-│     (Power & │           │  wires to appropriate rails)
-│   Programming)│           │
+│        USB-C│           │ (Connect all power and ground
+│    (Power & │           │  wires to appropriate rails)
+│ Programming)│           │
 └─────────────┘
 ```
 

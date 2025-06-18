@@ -50,7 +50,7 @@ TaskHandle_t FreeRTOSManager::wifiManagerTask = nullptr;
 TaskHandle_t FreeRTOSManager::mqttPublisherTask = nullptr;
 TaskHandle_t FreeRTOSManager::mqttSubscriberTask = nullptr;
 TaskHandle_t FreeRTOSManager::bleServerTask = nullptr;
-TaskHandle_t FreeRTOSManager::networkWatchdogTask = nullptr;
+
 TaskHandle_t FreeRTOSManager::servoControlTask = nullptr;
 TaskHandle_t FreeRTOSManager::i2cManagerTask = nullptr;
 TaskHandle_t FreeRTOSManager::pulseMonitorTask = nullptr;
@@ -78,7 +78,16 @@ bool FreeRTOSManager::initialize() {
         return true;
     }
 
-    Logger::info("Initializing FreeRTOS Manager...");
+    Logger::info("Initializing FreeRTOS Manager with BLE compatibility...");
+
+    // Check available heap before initialization
+    size_t freeHeap = xPortGetFreeHeapSize();
+    Logger::infof("Free heap before FreeRTOS Manager init: %u bytes", freeHeap);
+
+    if (freeHeap < 50000) {  // Ensure at least 50KB free for BLE
+        Logger::error("Insufficient heap memory for FreeRTOS Manager initialization");
+        return false;
+    }
 
     // Initialize memory pool
     memset(sensorDataPool, 0, SENSOR_DATA_POOL_SIZE);
@@ -105,7 +114,13 @@ bool FreeRTOSManager::initialize() {
     // This allows for proper initialization order
 
     initialized = true;
-    Logger::info("FreeRTOS Manager initialized successfully");
+
+    // Log final memory status
+    size_t finalHeap = xPortGetFreeHeapSize();
+    Logger::infof("Free heap after FreeRTOS Manager init: %u bytes", finalHeap);
+    Logger::infof("Memory used by FreeRTOS Manager: %u bytes", freeHeap - finalHeap);
+
+    Logger::info("FreeRTOS Manager initialized successfully with BLE compatibility");
     logInitializationStatus();
 
     return true;
@@ -330,7 +345,7 @@ TaskHandle_t FreeRTOSManager::getWiFiManagerTask() { return wifiManagerTask; }
 TaskHandle_t FreeRTOSManager::getMQTTPublisherTask() { return mqttPublisherTask; }
 TaskHandle_t FreeRTOSManager::getMQTTSubscriberTask() { return mqttSubscriberTask; }
 TaskHandle_t FreeRTOSManager::getBLEServerTask() { return bleServerTask; }
-TaskHandle_t FreeRTOSManager::getNetworkWatchdogTask() { return networkWatchdogTask; }
+
 TaskHandle_t FreeRTOSManager::getServoControlTask() { return servoControlTask; }
 TaskHandle_t FreeRTOSManager::getI2CManagerTask() { return i2cManagerTask; }
 TaskHandle_t FreeRTOSManager::getPulseMonitorTask() { return pulseMonitorTask; }
@@ -339,6 +354,127 @@ TaskHandle_t FreeRTOSManager::getPressureSensorTask() { return pressureSensorTas
 TaskHandle_t FreeRTOSManager::getDataFusionTask() { return dataFusionTask; }
 TaskHandle_t FreeRTOSManager::getSessionAnalyticsTask() { return sessionAnalyticsTask; }
 TaskHandle_t FreeRTOSManager::getSystemHealthTask() { return systemHealthTask; }
+
+// Task Handle Registration Methods
+void FreeRTOSManager::setServoControlTask(TaskHandle_t task) {
+    servoControlTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: Servo Control task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: Servo Control task unregistered");
+    }
+}
+
+void FreeRTOSManager::setI2CManagerTask(TaskHandle_t task) {
+    i2cManagerTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: I2C Manager task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: I2C Manager task unregistered");
+    }
+}
+
+void FreeRTOSManager::setPulseMonitorTask(TaskHandle_t task) {
+    pulseMonitorTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: Pulse Monitor task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: Pulse Monitor task unregistered");
+    }
+}
+
+void FreeRTOSManager::setMotionSensorTask(TaskHandle_t task) {
+    motionSensorTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: Motion Sensor task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: Motion Sensor task unregistered");
+    }
+}
+
+void FreeRTOSManager::setPressureSensorTask(TaskHandle_t task) {
+    pressureSensorTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: Pressure Sensor task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: Pressure Sensor task unregistered");
+    }
+}
+
+void FreeRTOSManager::setDataFusionTask(TaskHandle_t task) {
+    dataFusionTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: Data Fusion task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: Data Fusion task unregistered");
+    }
+}
+
+void FreeRTOSManager::setSessionAnalyticsTask(TaskHandle_t task) {
+    sessionAnalyticsTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: Session Analytics task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: Session Analytics task unregistered");
+    }
+}
+
+void FreeRTOSManager::setSystemHealthTask(TaskHandle_t task) {
+    systemHealthTask = task;
+    if (task) {
+        Logger::infof("FreeRTOS Manager: System Health task registered with handle %p", task);
+    } else {
+        Logger::info("FreeRTOS Manager: System Health task unregistered");
+    }
+}
+
+// =============================================================================
+// SEMAPHORE MANAGEMENT HELPER METHODS
+// =============================================================================
+
+bool FreeRTOSManager::takeI2CBusMutex(TickType_t timeout) {
+    if (!i2cBusMutex) return false;
+    return xSemaphoreTake(i2cBusMutex, timeout) == pdTRUE;
+}
+
+void FreeRTOSManager::giveI2CBusMutex() {
+    if (i2cBusMutex) {
+        xSemaphoreGive(i2cBusMutex);
+    }
+}
+
+bool FreeRTOSManager::takeServoControlMutex(TickType_t timeout) {
+    if (!servoControlMutex) return false;
+    return xSemaphoreTake(servoControlMutex, timeout) == pdTRUE;
+}
+
+void FreeRTOSManager::giveServoControlMutex() {
+    if (servoControlMutex) {
+        xSemaphoreGive(servoControlMutex);
+    }
+}
+
+bool FreeRTOSManager::takeSessionDataMutex(TickType_t timeout) {
+    if (!sessionDataMutex) return false;
+    return xSemaphoreTake(sessionDataMutex, timeout) == pdTRUE;
+}
+
+void FreeRTOSManager::giveSessionDataMutex() {
+    if (sessionDataMutex) {
+        xSemaphoreGive(sessionDataMutex);
+    }
+}
+
+bool FreeRTOSManager::takeConfigMutex(TickType_t timeout) {
+    if (!configMutex) return false;
+    return xSemaphoreTake(configMutex, timeout) == pdTRUE;
+}
+
+void FreeRTOSManager::giveConfigMutex() {
+    if (configMutex) {
+        xSemaphoreGive(configMutex);
+    }
+}
 
 // =============================================================================
 // PERFORMANCE MONITORING
@@ -540,7 +676,7 @@ void FreeRTOSManager::destroyTasks() {
     if (mqttPublisherTask) { vTaskDelete(mqttPublisherTask); mqttPublisherTask = nullptr; }
     if (mqttSubscriberTask) { vTaskDelete(mqttSubscriberTask); mqttSubscriberTask = nullptr; }
     if (bleServerTask) { vTaskDelete(bleServerTask); bleServerTask = nullptr; }
-    if (networkWatchdogTask) { vTaskDelete(networkWatchdogTask); networkWatchdogTask = nullptr; }
+
     if (servoControlTask) { vTaskDelete(servoControlTask); servoControlTask = nullptr; }
     if (i2cManagerTask) { vTaskDelete(i2cManagerTask); i2cManagerTask = nullptr; }
     if (pulseMonitorTask) { vTaskDelete(pulseMonitorTask); pulseMonitorTask = nullptr; }
